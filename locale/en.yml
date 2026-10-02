@@ -1,0 +1,21 @@
+autosave_group: Autosaves
+autosave_group_descr: |
+  The time between autosaves and switching them on or off is configured in the game, in the Save
+  dialog. Autosaves are written as Autosave_1, Autosave_2 and so on: every new autosave is
+  Autosave_1, the older ones move up one number, and the one that would go past the number
+  below is deleted.
+versions: Autosaves to keep
+versions_tooltip: How many autosaves (Autosave_1 to Autosave_5) are kept. Default 5.
+delete_group: Deleted saves and maps
+delete_group_descr: |
+  The Load and Save dialogs have a delete button (red cross) and a restore button (arrow).
+  Delete moves the selected save or map into a "staged for deletion" folder next to it;
+  restore brings back the most recently deleted one, and pressing it again the one before
+  that.
+
+  When the game starts, staged files that were discarded at least this many days ago are
+  deleted for good. With 0, the delete button deletes files for good straight away. A file
+  Windows will not let the game delete stays in the "staged for deletion" folder, so you can
+  delete it yourself.
+delete_after_days: Days to keep discarded files
+delete_after_days_tooltip: Staged files older than this are deleted for good when the game starts. 0 deletes immediately. Default 7.

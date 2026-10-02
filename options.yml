@@ -1,0 +1,35 @@
+meta:
+  version: 1.0.0
+options:
+- display: GroupBox
+  category: [Autosave]
+  header: '{{autosave_group}}'
+  text: '{{autosave_group_descr}}'
+  hasHeader: true
+  children:
+  - url: autosave.versions
+    name: autosave-versions
+    text: '{{versions}}'
+    tooltip: '{{versions_tooltip}}'
+    display: Number
+    contents:
+      value: 5
+      min: 1
+      max: 5
+      step: 1
+- display: GroupBox
+  category: [Autosave]
+  header: '{{delete_group}}'
+  text: '{{delete_group_descr}}'
+  hasHeader: true
+  children:
+  - url: autosave.delete_after_days
+    name: autosave-delete-after-days
+    text: '{{delete_after_days}}'
+    tooltip: '{{delete_after_days_tooltip}}'
+    display: Number
+    contents:
+      value: 7
+      min: 0
+      max: 3650
+      step: 1
