@@ -4,3 +4,5 @@ delete_after_days_tooltip: '0: azonnali törlés. Egyébként lejáratig vissza�
 delete_group: Törölt mentések és térképek
 qol: Quality of Life
 versions: Megtartott automatikus mentések
+tags.interface: Kezelőfelület
+tags.tools: Eszközök

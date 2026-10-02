@@ -4,3 +4,5 @@ delete_after_days_tooltip: 0 löscht sofort. Sonst können Dateien bis zum Ablau
 delete_group: Gelöschte Spielstände und Karten
 qol: Quality of Life
 versions: Automatische Spielstände behalten
+tags.interface: Oberfläche
+tags.tools: Werkzeuge

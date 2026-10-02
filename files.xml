@@ -7,4 +7,5 @@
   <file src="options.yml" />
   <file src="templates.lua" />
   <file src="messages.lua" />
+  <file src="CREDITS.md" />
 </files></config>

@@ -5,3 +5,5 @@ delete_after_days_tooltip: 0 supprime immédiatement. Sinon, les fichiers resten
 delete_group: Sauvegardes et cartes supprimées
 qol: Quality of Life
 versions: Sauvegardes automatiques à garder
+tags.interface: Interface
+tags.tools: Outils

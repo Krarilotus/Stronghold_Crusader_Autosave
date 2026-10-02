@@ -4,3 +4,5 @@ delete_after_days_tooltip: 0 elimina inmediatamente. Los demás valores permiten
 delete_group: Partidas y mapas eliminados
 qol: Quality of Life
 versions: Autoguardados que conservar
+tags.interface: Interfaz
+tags.tools: Herramientas

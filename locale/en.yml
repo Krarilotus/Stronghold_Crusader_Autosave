@@ -5,3 +5,5 @@ delete_after_days_tooltip: 0 deletes immediately. Otherwise discarded files can 
 delete_group: Discarded saves and maps
 qol: Quality of Life
 versions: Autosaves to keep
+tags.interface: Interface
+tags.tools: Tools

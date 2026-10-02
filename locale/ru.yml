@@ -4,3 +4,5 @@ delete_after_days_tooltip: 0 удаляет сразу. Иначе файлы м
 delete_group: Удалённые сохранения и карты
 qol: Quality of Life
 versions: Число автосохранений
+tags.interface: Интерфейс
+tags.tools: Инструменты
