@@ -1,0 +1,6 @@
+autosave_group: Guardado automático
+delete_after_days: Días que conservar archivos eliminados
+delete_after_days_tooltip: 0 elimina inmediatamente. Los demás valores permiten restaurar antes de caducar.
+delete_group: Partidas y mapas eliminados
+qol: Quality of Life
+versions: Autoguardados que conservar

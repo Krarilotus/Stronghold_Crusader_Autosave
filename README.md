@@ -64,3 +64,5 @@ See the comments at the top of `init.lua`, `files.lua` and `templates.lua`.
 ## Licence
 
 MIT, see [LICENSE](LICENSE).
+
+See [the UCP integration review](docs/ucp-review.md) for ownership and remaining acceptance.

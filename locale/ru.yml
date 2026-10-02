@@ -1,0 +1,6 @@
+autosave_group: Автосохранения
+delete_after_days: Хранить удалённые файлы (дней)
+delete_after_days_tooltip: 0 удаляет сразу. Иначе файлы можно восстановить до истечения срока.
+delete_group: Удалённые сохранения и карты
+qol: Quality of Life
+versions: Число автосохранений

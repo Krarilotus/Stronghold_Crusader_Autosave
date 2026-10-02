@@ -1,7 +1,14 @@
 name: autosave
 display-name: Autosave
 type: module
-version: 1.0.0
+version: 1.0.1
 author: Monsterfish
 meta:
   version: 1.0.0
+game:
+- SHC==1.41
+- SHCE==1.41
+dependencies:
+  framework: '>=3.0.7'
+  frontend: '>=1.0.2'
+  textResourceModifier: ^0.3.0

@@ -1,0 +1,6 @@
+autosave_group: Otomatik kayıtlar
+delete_after_days: Silinen dosyaları saklama süresi (gün)
+delete_after_days_tooltip: 0 hemen siler. Diğer değerlerde süre dolana kadar dosyalar geri alınabilir.
+delete_group: Silinen kayıtlar ve haritalar
+qol: Quality of Life
+versions: Saklanacak otomatik kayıt sayısı

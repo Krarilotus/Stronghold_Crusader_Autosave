@@ -1,0 +1,6 @@
+autosave_group: Automatikus mentések
+delete_after_days: Törölt fájlok megőrzése (nap)
+delete_after_days_tooltip: '0: azonnali törlés. Egyébként lejáratig visszaállíthatók a fájlok.'
+delete_group: Törölt mentések és térképek
+qol: Quality of Life
+versions: Megtartott automatikus mentések

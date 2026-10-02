@@ -1,0 +1,10 @@
+<config><files>
+  <file src="LICENSE" />
+  <file src="config.yml" />
+  <file src="definition.yml" />
+  <file src="init.lua" />
+  <file src="locale" />
+  <file src="options.yml" />
+  <file src="templates.lua" />
+  <file src="messages.lua" />
+</files></config>

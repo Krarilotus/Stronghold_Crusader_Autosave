@@ -1,0 +1,6 @@
+autosave_group: 自动存档
+delete_after_days: 已删除文件保留天数
+delete_after_days_tooltip: 0 表示立即删除。否则过期前可以恢复文件。
+delete_group: 删除的存档和地图
+qol: Quality of Life
+versions: 保留的自动存档数

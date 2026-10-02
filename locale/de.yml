@@ -1,0 +1,6 @@
+autosave_group: Automatisches Speichern
+delete_after_days: Aufbewahrung gelöschter Dateien (Tage)
+delete_after_days_tooltip: 0 löscht sofort. Sonst können Dateien bis zum Ablauf wiederhergestellt werden.
+delete_group: Gelöschte Spielstände und Karten
+qol: Quality of Life
+versions: Automatische Spielstände behalten

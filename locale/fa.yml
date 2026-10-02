@@ -1,0 +1,6 @@
+autosave_group: ذخیره خودکار
+delete_after_days: روزهای نگهداری فایل‌های حذف‌شده
+delete_after_days_tooltip: ۰ فوراً حذف می‌کند. در غیر این صورت فایل‌ها تا پایان مهلت قابل بازیابی هستند.
+delete_group: ذخیره‌ها و نقشه‌های حذف‌شده
+qol: Quality of Life
+versions: تعداد ذخیره‌های خودکار

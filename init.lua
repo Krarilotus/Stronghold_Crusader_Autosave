@@ -57,9 +57,10 @@ local MAX_VERSIONS = 5
 local DEFAULT_DELETE_AFTER_DAYS = 7
 local MAX_DELETE_AFTER_DAYS = 3650
 
-local LABEL_ENABLED = "Autosave on"
-local LABEL_DISABLED = "Autosave off"
-local MINUTES_SUFFIX = "min"
+local LABELS = require("messages").english
+local LABEL_ENABLED = LABELS[1]
+local LABEL_DISABLED = LABELS[2]
+local MINUTES_SUFFIX = LABELS[3]
 
 -- Position inside the 700 x 397 Save dialog. The Save and Back buttons are at x 50, width
 -- 210, height 27, 40 px apart (y 310 and 350); this row sits the same distance above Save
@@ -73,7 +74,7 @@ local DELETE_BUTTON = { x = 194, y = 71, width = 29, height = 21 }
 local RESTORE_BUTTON = { x = 226, y = 70, width = 29, height = 22 }
 -- Under the dialog's frame, right-aligned with the file list.
 local OPEN_FOLDER_BUTTON = { x = 555, y = 408, width = 140, height = 27 }
-local LABEL_OPEN_FOLDER = "Open folder"
+local LABEL_OPEN_FOLDER = LABELS[4]
 
 -- Patterns ---------------------------------------------------------------------------------
 
@@ -1117,6 +1118,18 @@ local function enable(settings, options)
   installItemTable(game.load, loadTable)
 
   hooks.registerHookCallback("afterInit", function()
+    -- CR.TEX is now loaded; the text owner selects and encodes the game language.
+    local owner = modules.textResourceModifier
+    local texts = require("messages")[owner:GetLanguage():lower()] or LABELS
+    local encoded = {}
+    for index, text in ipairs(texts) do
+      encoded[index] = owner:TransformText(text)
+      assert(not encoded[index]:match("^ERROR:"), "autosave: text encoding unavailable")
+    end
+    labelEnabled = allocateCString(encoded[1])
+    labelDisabled = allocateCString(encoded[2])
+    MINUTES_SUFFIX = encoded[3]
+    labelOpenFolder = allocateCString(encoded[4])
     local ok, message = pcall(purgeStagedFiles)
     if not ok then
       log(WARNING, "autosave: cleaning up staged files failed: " .. tostring(message))

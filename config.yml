@@ -1,0 +1,14 @@
+meta:
+  version: 1.0.0
+config-sparse:
+  modules:
+    autosave:
+      config:
+        versions:
+          contents:
+            value: 5
+        delete_after_days:
+          contents:
+            value: 7
+  plugins: {}
+  load-order: []
