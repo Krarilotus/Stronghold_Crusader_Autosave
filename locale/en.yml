@@ -7,3 +7,4 @@ qol: Quality of Life
 versions: Autosaves to keep
 tags.interface: Interface
 tags.tools: Tools
+versions_help: Keeps the latest 5 autosaves by default. Older files move after the new save succeeds.

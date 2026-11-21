@@ -6,3 +6,4 @@ qol: Quality of Life
 versions: 保留的自动存档数
 tags.interface: 界面
 tags.tools: 工具
+versions_help: 默认保留最近 5 个自动存档。新存档成功写入后才会轮换旧存档。

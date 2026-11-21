@@ -5,6 +5,7 @@ options:
   category:
   - '{{qol}}'
   header: '{{autosave_group}}'
+  text: '{{versions_help}}'
   hasHeader: true
   children:
   - url: autosave.versions
@@ -20,12 +21,12 @@ options:
   category:
   - '{{qol}}'
   header: '{{delete_group}}'
+  text: '{{delete_after_days_tooltip}}'
   hasHeader: true
   children:
   - url: autosave.delete_after_days
     name: autosave-delete-after-days
     text: '{{delete_after_days}}'
-    tooltip: '{{delete_after_days_tooltip}}'
     display: Slider
     contents:
       value: 7

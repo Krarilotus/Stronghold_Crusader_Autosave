@@ -6,3 +6,4 @@ qol: Quality of Life
 versions: Automatische Spielstände behalten
 tags.interface: Oberfläche
 tags.tools: Werkzeuge
+versions_help: Standardmäßig bleiben die letzten 5 automatischen Spielstände erhalten. Ältere Spielstände werden erst nach erfolgreichem Speichern verschoben.

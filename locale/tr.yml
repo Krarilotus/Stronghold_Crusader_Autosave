@@ -6,3 +6,4 @@ qol: Quality of Life
 versions: Saklanacak otomatik kayıt sayısı
 tags.interface: Arayüz
 tags.tools: Araçlar
+versions_help: Varsayılan olarak son 5 otomatik kayıt tutulur. Yeni kayıt başarıyla yazıldıktan sonra eski dosyalar taşınır.

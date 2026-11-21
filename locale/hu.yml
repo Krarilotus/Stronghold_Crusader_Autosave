@@ -6,3 +6,4 @@ qol: Quality of Life
 versions: Megtartott automatikus mentések
 tags.interface: Kezelőfelület
 tags.tools: Eszközök
+versions_help: Alapértelmezés szerint az utolsó 5 automatikus mentés marad meg. A régebbi fájlok az új mentés sikeres befejezése után kerülnek a következő helyre.

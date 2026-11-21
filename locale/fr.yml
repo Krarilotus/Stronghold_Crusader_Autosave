@@ -7,3 +7,4 @@ qol: Quality of Life
 versions: Sauvegardes automatiques à garder
 tags.interface: Interface
 tags.tools: Outils
+versions_help: Par défaut, les 5 dernières sauvegardes automatiques sont conservées. Les anciennes sont déplacées après l’enregistrement réussi de la nouvelle.

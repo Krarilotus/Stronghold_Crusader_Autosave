@@ -6,3 +6,4 @@ qol: Quality of Life
 versions: Autoguardados que conservar
 tags.interface: Interfaz
 tags.tools: Herramientas
+versions_help: Por defecto se conservan los últimos 5 autoguardados. Los archivos anteriores se mueven cuando termina el nuevo guardado.
