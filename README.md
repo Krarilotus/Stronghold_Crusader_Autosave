@@ -6,9 +6,11 @@ and Save dialogs. Works with `Stronghold Crusader.exe` and `Stronghold_Crusader_
 
 ## Features
 
-* **Autosaves** every few minutes into `Autosave_1` .. `Autosave_5`. Each new autosave moves the
-  older ones up one number; whatever would go past the limit is deleted. Single player only
-  (campaign, scenario, skirmish, Crusader trail) and never in the map editor.
+* **Autosaves** every few minutes into `Autosave_1` .. `Autosave_5`. The game writes a fresh
+  save first. An incomplete write leaves the numbered files in place. If a rename fails after
+  writing, Autosave restores the numbering where possible and leaves recovery files.
+  Autosave runs in single-player sessions outside the map editor. It pauses while Recorder
+  is recording, playing or changing worlds.
   The clock only runs while you actually play - a paused game, an open menu, an inactive game
   window or being outside a game does not count.
 * **Controls in the Save dialog**: a box for the interval that shows `5 min` and takes the number

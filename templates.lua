@@ -69,15 +69,15 @@ jmp resumeAddress
 
 -- Saves the game under the autosave name.
 --
--- First the older autosaves move up one number (lua). The game's save command then writes
--- <text slot 2>.sav, the slot the Save dialog types into, so the player's own text in that
--- slot (and the text handler's focus fields) is put aside, the autosave name written in,
--- the save run, and everything put back.
+-- Set aside the player's text and focus, write a temporary save through the
+-- native command, then restore the text fields before checking and rotating.
 templates.autosaveRoutine = [[
 push ebx
 push esi
 push edi
-call rotateAutosaves
+call beginAutosave
+cmp dword [stateNameLength], 0
+je autosave_done
 mov ebx, textHandler
 mov eax, dword [ebx + textIndex]
 mov dword [snapshot], eax
@@ -125,6 +125,8 @@ mov eax, dword [snapshot + 8]
 mov dword [ebx + textReturnPressed], eax
 mov eax, dword [snapshot + 12]
 mov dword [ebx + textLock], eax
+call finishAutosave
+autosave_done:
 pop edi
 pop esi
 pop ebx

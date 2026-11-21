@@ -3,6 +3,8 @@
   <file src="config.yml" />
   <file src="definition.yml" />
   <file src="init.lua" />
+  <file src="files.lua" />
+  <file src="rotation.lua" />
   <file src="locale" />
   <file src="options.yml" />
   <file src="templates.lua" />

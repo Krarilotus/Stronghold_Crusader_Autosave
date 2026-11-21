@@ -40,6 +40,7 @@
 
 local templates = require("templates")
 local files = require("files")
+local rotation = require("rotation")
 
 local SETTINGS_FILE = "ucp/autosave-settings.txt"
 
@@ -86,9 +87,11 @@ local LOAD_MODAL_AOB =
   "68 ? ? ? ? 68 ? ? ? ? 50 68 00 02 00 00 68 8D 01 00 00 68 BC 02 00 00 6A FF 6A FF 6A 09 B9"
 local OFFSET_MODAL_MENU = 1
 
--- The save command (cdecl, 0 = save): opens the progress bar and saves.
+-- Native save command (cdecl, 0 = save). The final store selects the
+-- progress modal in the same current-modal field guarded by the timer.
 local EXECUTE_SAVE_AOB =
-  "8B 44 24 04 F7 D8 1B C0 83 E0 0E 83 C0 20 6A 0E B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? C7"
+  "8B 44 24 04 F7 D8 1B C0 83 E0 0E 83 C0 20 6A 0E B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? C7 05 ? ? ? ? 0E 00 00 00"
+local OFFSET_SAVE_MODAL_OPERAND = 33
 
 -- Main loop, after the tick loop: mov [msPerTick], eax / mov ecx, gameCore /
 -- call isInGameScreen / test eax, eax / je / mov ecx, ... / call.
@@ -103,13 +106,6 @@ local OFFSET_TIME_GET_TIME_SLOT = 8
 -- GameMode2 is 1 in the map editor.
 local GAME_MODE_2_AOB = "83 3D ? ? ? ? 01 75 0D 6A 04 B9 ? ? ? ? E8 ? ? ? ? C3"
 local OFFSET_GAME_MODE_2 = 2
-
--- Prologue of the in-game key handlers: gameCore (the screen object) and the modal guard,
--- which holds the id of the open dialog and -1 when there is none.
-local IN_GAME_GUARD_AOB =
-  "F7 C1 00 00 00 40 0F 85 ? ? ? ? B9 ? ? ? ? E8 ? ? ? ? 85 C0 0F 84 ? ? ? ? 83 3D ? ? ? ? FF"
-local OFFSET_GAME_CORE = 13
-local OFFSET_MENU_GUARD = 32
 
 local IS_IN_GAME_SCREEN_AOB = "8B 41 0C 83 F8 0C 74 0D 83 F8 0E 74 08 83 F8 10 74 03 33 C0 C3"
 
@@ -327,12 +323,12 @@ local function assemble(script, values)
 end
 
 -- A cdecl function with no arguments that runs `callback` in lua (UCP's own trick).
-local function luaFunction(purpose, callback)
+local function luaFunction(purpose, callback, reportEachFailure)
   local pad = core.allocateCode({ 0x90, 0x90, 0x90, 0x90, 0x90, 0xC3 })
   local reported = false
   core.detourCode(function(registers)
     local ok, message = pcall(callback)
-    if not ok and not reported then
+    if not ok and (not reported or reportEachFailure) then
       reported = true
       log(WARNING, string.format("autosave: %s failed: %s", purpose, tostring(message)))
     end
@@ -540,18 +536,16 @@ local function resolveGame()
   end
 
   game.executeSave = scan(EXECUTE_SAVE_AOB, "the save command")
+  game.menuGuard = core.readInteger(game.executeSave + OFFSET_SAVE_MODAL_OPERAND)
   game.timeGetTimeSlot = core.readInteger(
     scan(TIME_GET_TIME_AOB, "timeGetTime") + OFFSET_TIME_GET_TIME_SLOT)
   game.gameMode2 = core.readInteger(scan(GAME_MODE_2_AOB, "the map editor flag") + OFFSET_GAME_MODE_2)
-  local guardSite = scan(IN_GAME_GUARD_AOB, "the in-game guard")
-  game.gameCore = core.readInteger(guardSite + OFFSET_GAME_CORE)
-  game.menuGuard = core.readInteger(guardSite + OFFSET_MENU_GUARD)
   game.isInGameScreen = scan(IS_IN_GAME_SCREEN_AOB, "isInGameScreen")
 
   game.frameHook = scan(FRAME_HOOK_AOB, "the main loop") + OFFSET_FRAME_HOOK
   expectBytes(game.frameHook, { 0xB9 }, "the main loop")
-  if core.readInteger(game.frameHook + 1) ~= game.gameCore
-    or readCallTarget(game.frameHook, 5, "the main loop") ~= game.isInGameScreen then
+  game.gameCore = core.readInteger(game.frameHook + 1)
+  if readCallTarget(game.frameHook, 5, "the main loop") ~= game.isInGameScreen then
     error("the main loop is not the one this module knows")
   end
 
@@ -643,9 +637,7 @@ local function enable(settings, options)
   local state = core.allocate(STATE_SIZE, true)
   core.writeInteger(state + STATE_ENABLED, settings.enabled and 1 or 0)
   core.writeInteger(state + STATE_INTERVAL, settings.minutes * MS_PER_MINUTE)
-  local newestAutosave = settings.name .. "_1"
-  core.writeInteger(state + STATE_NAME_LENGTH, #newestAutosave)
-  local saveName = allocateCString(newestAutosave, MAX_SAVE_NAME_LENGTH + 1)
+  local saveName = allocateCString("", MAX_SAVE_NAME_LENGTH + 1)
 
   local labelEnabled = allocateCString(LABEL_ENABLED)
   local labelDisabled = allocateCString(LABEL_DISABLED)
@@ -912,31 +904,59 @@ local function enable(settings, options)
 
   ---Before an autosave: <name>_1 .. <name>_(N-1) move up one number and whatever would end up
   ---past N (or is left over from a larger setting) is deleted for good.
-  local function rotateAutosaves()
-    local directory = saveDirectory()
-    local function autosavePath(number)
+  local pending, sequence = nil, 0
+  local recorderWarning = false
+
+  local function beginAutosave()
+    core.writeInteger(state + STATE_NAME_LENGTH, 0)
+    if pending then return end
+    local recorder = modules.recorder
+    if recorder then
+      if recorder.inputStateVersion ~= 1 or type(recorder.getInputState) ~= "function" then
+        if not recorderWarning then
+          log(WARNING, "autosave: paused because Recorder does not expose its activity state")
+          recorderWarning = true
+        end
+        return
+      end
+      local activity = recorder:getInputState()
+      if not activity or activity.version ~= 1 or activity.blocked ~= false
+          or activity.mode ~= "none" then return end
+    end
+
+    local process = files.processId()
+    for _ = 1, 32 do
+      sequence = (sequence + 1) & 0xFFFF
+      local name = ("%s-tmp-%08x-%04x"):format(settings.name:sub(1, 14), process, sequence)
+      local path = gamePath(PATH_TYPE_SAVE, name .. ".sav")
+      if path and not files.exists(path) then
+        pending = path
+        writeCString(saveName, name)
+        core.writeInteger(state + STATE_NAME_LENGTH, #name)
+        return
+      end
+    end
+    error("could not choose an unused temporary save name")
+  end
+
+  local function finishAutosave()
+    local path = pending
+    pending = nil
+    if not files.validateSave(path, rotation.complete) then
+      error("the native write did not produce a complete " .. path)
+    end
+    local directory = files.directoryOf(path)
+    local function slot(number)
       return string.format("%s%s_%d.sav", directory, settings.name, number)
     end
-    local now = os.time()
-    for number = MAX_VERSIONS, options.versions, -1 do
-      local path = autosavePath(number)
-      if files.exists(path) then
-        local result, detail = files.remove(path, now)
-        if result == "staged" then
-          log(WARNING, string.format("autosave: could not delete %s, moved it to %s", path, detail))
-        elseif result == nil then
-          log(WARNING, string.format("autosave: could not delete %s: %s", path, tostring(detail)))
-        end
-      end
+    local saved, retained = files.withRotationLock(directory .. settings.name .. ".ucp-autosave.lock", function()
+      return rotation.publish(files, path, slot, options.versions, MAX_VERSIONS)
+    end)
+    if not saved then
+      error("rotation failed: " .. retained .. ". New save kept at " .. path)
     end
-    for number = options.versions - 1, 1, -1 do
-      local path = autosavePath(number)
-      if files.exists(path) then
-        local moved, message = files.rename(path, autosavePath(number + 1))
-        if not moved then
-          log(WARNING, string.format("autosave: could not rename %s: %s", path, tostring(message)))
-        end
-      end
+    for _, backup in ipairs(retained) do
+      log(WARNING, "autosave: could not remove old recovery file " .. backup)
     end
   end
 
@@ -1041,7 +1061,8 @@ local function enable(settings, options)
     snapshot = core.allocate(24, true),
     nameBackup = core.allocate(TEXT_SLOT_SIZE, true),
     releaseFocus = luaFunction("handing back the text focus", releaseFocus),
-    rotateAutosaves = luaFunction("renaming the older autosaves", rotateAutosaves),
+    beginAutosave = luaFunction("preparing the native write", beginAutosave, true),
+    finishAutosave = luaFunction("checking and rotating saves", finishAutosave, true),
     saveModalId = SAVE_MODAL_ID,
     loadModalId = LOAD_MODAL_ID,
     mapEditorMode = MAP_EDITOR_MODE,

@@ -2,11 +2,15 @@
 
 Autosave settings now use working sliders and short translated text. The in-game buttons follow the game language.
 
-Adds all nine launcher locales, eleven native-game label catalogs, dependencies, aligned defaults and a runtime allowlist. Uses textResourceModifier 0.3.0 after CR.TEX loads; no copied text encoder or new save hook is introduced. Save/file behavior is preserved.
+Adds all nine launcher locales, eleven native-game label catalogs, dependencies, aligned defaults and a runtime allowlist. Uses textResourceModifier 0.3.0 after CR.TEX loads. Autosave keeps its existing post-tick hook and native save action.
+
+Autosave writes to a fresh name, checks the closed native save's section directory and length, and only then rotates the numbered saves. Conflicting rotations yield to the first instance. After a failed rename, numbered saves are restored where possible and the new file is kept for recovery. Old saves remain available after a failed native write. The native format check catches incomplete files and does not validate gameplay state.
+
+The Recorder input-state API suppresses saves during recording, playback and world transitions. Recorder builds without this API suppress Autosave and log why. File handling uses cffi 1.0.0 to resolve the existing Windows APIs and no longer parses the game or kernel32 PE headers.
 
 ## Remaining native work
 
-Autosave calls the native save action, but rotates/deletes older files before the new save succeeds. Failed writes and failed rotation need recovery validation before release. The private settings file, custom save/load dialog hooks, manual PE/API resolver and ANSI file paths need review against existing config/UI/file owners. Do not claim non-ASCII-path or Recorder support from these packaging changes.
+Failure recovery and playback still need native validation. The private settings file, custom save/load dialog hooks and ANSI file paths need review against existing config/UI/file owners. Accepted ASCII save names and retention defaults are unchanged.
 
 Inspected upstream parent: `1cc1ff7dfd9e9bf42145733f5c57e9dcbb035b1a`. Launcher locales follow
 `UCP3-GUI/resources/lang/languages.yaml` (de, en, fr, ru, hu, tr, ch, es, fa).
