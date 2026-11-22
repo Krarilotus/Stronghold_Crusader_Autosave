@@ -1,3 +1,3 @@
 # Autosave
 
-Automatikusan menti az egyjátékos játszmákat és megtart több friss mentést. Gombokat ad a mentések és térképek törléséhez, visszaállításához és megkereséséhez.
+Néhány percenként automatikusan menti az egyjátékos játékodat, megőrzi az utolsó néhány automatikus mentést, és egy törlés, valamint egy visszaállítás gombot ad a Betöltés és Mentés ablakokhoz.
