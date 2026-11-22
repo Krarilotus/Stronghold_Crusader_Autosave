@@ -3,7 +3,7 @@ delete_after_days: Durée de conservation des fichiers supprimés (jours)
 delete_after_days_tooltip: 0 supprime immédiatement. Sinon, les fichiers restent récupérables jusqu'à
   expiration.
 delete_group: Sauvegardes et cartes supprimées
-qol: Quality of Life
+qol: Qualité de vie
 versions: Sauvegardes automatiques à garder
 tags.interface: Interface
 tags.tools: Outils
