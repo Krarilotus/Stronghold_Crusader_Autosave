@@ -1,3 +1,3 @@
 # Autosave
 
-Speichert deine Einzelspielerpartie alle paar Minuten automatisch, behält die letzten automatischen Spielstände und fügt den Dialogen „Laden“ und „Speichern“ eine Löschen- und eine Wiederherstellen-Schaltfläche hinzu.
+Speichert deine Einzelspielerpartie alle paar Minuten automatisch und behält die letzten automatischen Spielstände. Die Dialoge „Laden“ und „Speichern“ erhalten Schaltflächen zum Löschen, Wiederherstellen und Finden von Spielständen und Karten.

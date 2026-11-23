@@ -1,3 +1,3 @@
 # Autosave
 
-Tek oyunculu oyununuzu birkaç dakikada bir otomatik olarak kaydeder, son birkaç otomatik kaydı saklar ve Yükle ile Kaydet pencerelerine bir silme ve bir geri alma düğmesi ekler.
+Tek oyunculu oyununuzu birkaç dakikada bir otomatik olarak kaydeder ve son birkaç otomatik kaydı saklar. Yükle ve Kaydet pencerelerine kayıtları ve haritaları silmek, geri almak ve bulmak için düğmeler eklenir.
