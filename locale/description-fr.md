@@ -1,3 +1,3 @@
 # Autosave
 
-Sauvegarde automatiquement votre partie solo toutes les quelques minutes et conserve les dernières sauvegardes automatiques. Les fenêtres Charger et Sauvegarder reçoivent des boutons pour supprimer, restaurer et retrouver les sauvegardes et les cartes.
+Sauvegarde automatiquement votre partie solo toutes les quelques minutes et conserve les dernières sauvegardes automatiques. Dans les fenêtres de chargement et de sauvegarde, des boutons permettent de supprimer des sauvegardes et des cartes, de les restaurer ou de les afficher dans leur dossier.
