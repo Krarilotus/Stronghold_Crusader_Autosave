@@ -35,7 +35,7 @@ focus_checked:
 cmp dword [stateEnabled], 0
 je reset_timer
 cmp dword [gameMode2], mapEditorMode
-je reset_timer
+je map_editor
 mov eax, dword [currentGameMode]
 cmp eax, scenarioMode
 je single_player
@@ -46,6 +46,15 @@ mov ecx, gameCore
 call isInGameScreen
 test eax, eax
 je reset_timer
+jmp on_map
+map_editor:
+cmp dword [screenId], editorPropertiesScreen
+je on_map
+mov ecx, gameCore
+call isInGameScreen
+test eax, eax
+je reset_timer
+on_map:
 cmp dword [gamePaused], 0
 jne frame_done
 cmp dword [menuGuard], -1
@@ -69,15 +78,18 @@ jmp resumeAddress
 
 -- Saves the game under the autosave name.
 --
--- First the older autosaves move up one number (lua). The game's save command then writes
--- <text slot 2>.sav, the slot the Save dialog types into, so the player's own text in that
--- slot (and the text handler's focus fields) is put aside, the autosave name written in,
--- the save run, and everything put back.
+-- Lua picks the name first and rotates the older autosaves; it can also call the whole thing
+-- off (an unnamed map in the editor, for instance). The game's save command then writes
+-- <text slot 2>.sav - .map in the editor - the slot the Save dialog types into, so the
+-- player's own text in that slot (and the text handler's focus fields) is put aside, the
+-- autosave name written in, the save run, and everything put back.
 templates.autosaveRoutine = [[
 push ebx
 push esi
 push edi
-call rotateAutosaves
+call prepareAutosave
+cmp dword [stateSkipSave], 0
+jne nothing_to_save
 mov ebx, textHandler
 mov eax, dword [ebx + textIndex]
 mov dword [snapshot], eax
@@ -107,6 +119,7 @@ mov dword [ebx + nameCursor], eax
 push 0
 call executeSave
 add esp, 4
+call finishAutosave
 mov ebx, textHandler
 cld
 mov esi, nameBackup
@@ -125,6 +138,7 @@ mov eax, dword [snapshot + 8]
 mov dword [ebx + textReturnPressed], eax
 mov eax, dword [snapshot + 12]
 mov dword [ebx + textLock], eax
+nothing_to_save:
 pop edi
 pop esi
 pop ebx

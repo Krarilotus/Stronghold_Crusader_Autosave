@@ -15,8 +15,13 @@ Autosaves are named **Autosave_1** (the newest) to **Autosave_5**. Each new auto
 older ones up one number; the one that would go past the limit is deleted. How many are kept
 (1 to 5) is a UCP setting.
 
-Autosaves only happen while a single player game (campaign, scenario, skirmish, Crusader
-trail) is on the map, never in multiplayer or the map editor. The clock only runs while you
+In the **map editor**, a map that has been saved or loaded before is autosaved next to itself as
+**<map name>_autosave.map** on the same interval, and that copy is deleted again as soon as you
+save the map yourself. A new map that has never been saved is not autosaved. This can be switched
+off in the UCP3 GUI.
+
+Autosaves of games only happen while a single player game (campaign, scenario, skirmish, Crusader
+trail) is on the map, never in multiplayer. The clock only runs while you
 play: time in a paused game, with a menu open (Esc menu, options, Load/Save ...), while the
 game window is in the background or outside of a game does not count.
 

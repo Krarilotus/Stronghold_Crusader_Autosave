@@ -6,6 +6,8 @@ autosave_group_descr: |
   below is deleted.
 versions: Autosaves to keep
 versions_tooltip: How many autosaves (Autosave_1 to Autosave_5) are kept. Default 5.
+editor_maps: Autosave maps in the map editor
+editor_maps_tooltip: While editing a map that has been saved or loaded, keep a copy named "<map>_autosave". It is deleted once you save the map yourself. Default on.
 delete_group: Deleted saves and maps
 delete_group_descr: |
   The Load and Save dialogs have a delete button (red cross) and a restore button (arrow).

@@ -20,9 +20,17 @@ and Save dialogs. Works with `Stronghold Crusader.exe` and `Stronghold_Crusader_
 * **Restore** (arrow) brings the most recently deleted file back, then the one before it, and so
   on. A name that is taken in the meantime becomes `... (restored)`.
 * **Open folder** opens the save or map folder in Explorer with the selected file highlighted.
+* **Map editor**: a named map is autosaved as `<name>_autosave.map` until you save it yourself.
 
 The buttons use the game's own sprites and fonts, so they look like the dialog around them. They
 are hidden in multiplayer.
+
+## Map editor
+
+While you edit a map that has been saved or loaded before, a copy of it is autosaved next to it
+as **<map name>_autosave.map**, on the same interval. The copy is deleted as soon as you save the
+map yourself. A map that has never been saved has no name yet and is not autosaved. Can be
+switched off in the UCP3 GUI.
 
 ## Installing
 
@@ -31,7 +39,8 @@ the version from `definition.yml`), then enable **Autosave** in the UCP3 GUI.
 
 ## Settings
 
-In the UCP3 GUI: how many autosaves to keep (1-5) and how many days deleted files are kept.
+In the UCP3 GUI: how many autosaves to keep (1-5), whether maps are autosaved in the editor, and
+how many days deleted files are kept.
 
 The interval, the on/off state and the autosave name live in `ucp/autosave-settings.txt`:
 
