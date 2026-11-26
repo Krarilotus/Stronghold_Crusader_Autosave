@@ -101,6 +101,10 @@ local OFFSET_SAVE_MODAL_OPERAND = 33
 -- Successful write epilogue, after the ten bytes observed by Map PNG.
 local WRITE_DONE_AOB = "5F 5E 5D 5B 83 C4 10 C2 04 00 8B FF ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 04 04 04 04"
 local SIZE_WRITE_DONE_HOOK = 7
+local READ_DONE_AOB = "89 1D ? ? ? ? C7 05 ? ? ? ? FF FF FF FF 89 15 ? ? ? ? 75 3C A1 ? ? ? ? 83 F8 0F"
+local SIZE_READ_DONE_HOOK = 6
+local NEW_EDITOR_MAP_AOB = "56 50 B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? 89 3D ? ? ? ? E8"
+local SIZE_NEW_EDITOR_MAP_HOOK = 7
 local savingEditorMap = false
 
 -- Main loop, after the tick loop: mov [msPerTick], eax / mov ecx, gameCore /
@@ -221,6 +225,7 @@ local LIST_KIND_SAVE_GAME = 3
 -- ResourceManager
 local FILE_NAMES = 0xBC8 -- per file index, without extension
 local PATHS = 0x7AEE0 -- per path type
+local ACTIVE_PATH_TYPE = 0xBC4
 local NAME_SIZE = 0x3E9
 local MAX_FILES = 500
 local PATH_TYPE_SAVE = 1
@@ -927,56 +932,43 @@ local function enable(settings, options)
 
   -- Autosave versions -------------------------------------------------------------------------
 
-  -- Maps in the editor ------------------------------------------------------------------------
-
-  ---The name the editor's Save dialog holds, which is the current map's name once it has been
-  ---saved or loaded. nil when there is none, or when it cannot be part of a file name.
-  local function editorMapName()
-    local length = core.readInteger(slotField(TEXT_LENGTH, FILE_NAME_SLOT))
-    if length <= 0 or length > MAX_MAP_NAME_LENGTH then
-      return nil
+  local editorMap, editorCopy
+  local function activeMapPath()
+    if core.readInteger(game.resourceManager + ACTIVE_PATH_TYPE) == PATH_TYPE_MAP then
+      return currentPath(PATH_TYPE_MAP)
     end
-    local name = core.readString(textHandler + TEXT_STRINGS + FILE_NAME_SLOT * TEXT_SLOT_SIZE, length)
-    name = name:match("^%s*(.-)%s*$")
-    if name == "" or name:find('[\\/:%*%?"<>|]') then
-      return nil
-    end
-    return name
   end
 
-  local function autosaveMapName(name)
-    return name .. AUTOSAVE_MAP_SUFFIX
-  end
-
-  local function mapPath(name)
-    return gamePath(PATH_TYPE_MAP, name .. ".map")
-  end
-
-  ---The map the editor is working on, as long as it has been saved or loaded before, and is
-  ---not itself an autosave copy.
   local function savedEditorMap()
-    local name = editorMapName()
-    if name == nil or name:sub(-#AUTOSAVE_MAP_SUFFIX) == AUTOSAVE_MAP_SUFFIX then
-      return nil
-    end
-    if not files.exists(mapPath(name)) then
-      return nil -- a new map that has never been saved
-    end
+    if not editorMap or not files.exists(editorMap) then return nil end
+    local name = files.nameOf(editorMap):match("^(.+)%.[mM][aA][pP]$")
+    if not name or #name > MAX_MAP_NAME_LENGTH
+      or name:lower():sub(-#AUTOSAVE_MAP_SUFFIX) == AUTOSAVE_MAP_SUFFIX then return nil end
     return name
   end
 
   local function onSave()
-    if savingEditorMap or core.readInteger(game.gameMode2) ~= MAP_EDITOR_MODE
+    if core.readInteger(game.gameMode2) ~= MAP_EDITOR_MODE
       or core.readInteger(game.gameCore + OFFSET_SCREEN_ID) ~= SCREEN_MAP_EDITOR then
       return
     end
-    local name = editorMapName()
-    if name == nil or name:sub(-#AUTOSAVE_MAP_SUFFIX) == AUTOSAVE_MAP_SUFFIX then
+    local path = activeMapPath()
+    if not path then return end
+    if savingEditorMap then
+      editorCopy = path
       return
     end
-    local path = currentPath(PATH_TYPE_MAP)
-    if files.nameOf(path):lower() ~= (name .. ".map"):lower() then return end
-    local copy = files.directoryOf(path) .. autosaveMapName(name) .. ".map"
+    local name = files.nameOf(path):match("^(.+)%.[mM][aA][pP]$")
+    if not name then return end
+    local prior = editorMap
+    editorMap = path
+    if name:lower():sub(-#AUTOSAVE_MAP_SUFFIX) == AUTOSAVE_MAP_SUFFIX then
+      editorCopy = nil
+      return
+    end
+    local copy = path == prior and editorCopy
+      or files.directoryOf(path) .. name .. AUTOSAVE_MAP_SUFFIX .. ".map"
+    editorCopy = nil
     if files.exists(copy) then
       local deleted, message = files.delete(copy)
       if deleted then
@@ -987,11 +979,21 @@ local function enable(settings, options)
     end
   end
 
-  local editorWriteDone
+  local editorWriteDone, editorReadDone, newEditorMap
   if options.editorMaps then
-    local reason
-    editorWriteDone, reason = core.AOBScanUnique(WRITE_DONE_AOB)
-    if not editorWriteDone then log(WARNING, "map editor autosaves unavailable: " .. reason) end
+    local function bind(pattern, purpose)
+      local address, reason = core.AOBScanUnique(pattern)
+      assert(address, purpose .. ": " .. tostring(reason))
+      return address
+    end
+    local ok, reason = pcall(function()
+      expectBytes(game.setPath + 0x22, { 0x89, 0xB3, 0xC4, 0x0B, 0, 0 },
+        "the active resource type")
+      editorReadDone = bind(READ_DONE_AOB, "map load completion")
+      newEditorMap = bind(NEW_EDITOR_MAP_AOB, "new map creation")
+      editorWriteDone = bind(WRITE_DONE_AOB, "map save completion")
+    end)
+    if not ok then log(WARNING, "map editor autosaves unavailable: " .. tostring(reason)) end
   end
 
   local pending, sequence = nil, 0
@@ -1017,7 +1019,7 @@ local function enable(settings, options)
     if core.readInteger(game.gameMode2) == MAP_EDITOR_MODE then
       local name = editorWriteDone and savedEditorMap()
       if name then
-        local copy = autosaveMapName(name)
+        local copy = name .. AUTOSAVE_MAP_SUFFIX
         writeCString(saveName, copy)
         savingEditorMap = true
         core.writeInteger(state + STATE_NAME_LENGTH, #copy)
@@ -1280,6 +1282,14 @@ local function enable(settings, options)
   end)
 
   if editorWriteDone then
+    core.detourCode(function(registers)
+      editorMap, editorCopy = activeMapPath(), nil
+      return registers
+    end, editorReadDone, SIZE_READ_DONE_HOOK)
+    core.detourCode(function(registers)
+      editorMap, editorCopy = nil, nil
+      return registers
+    end, newEditorMap, SIZE_NEW_EDITOR_MAP_HOOK)
     core.detourCode(function(registers)
       local ok, message = pcall(onSave)
       if not ok then log(WARNING, "could not clean up editor autosave: " .. tostring(message)) end
