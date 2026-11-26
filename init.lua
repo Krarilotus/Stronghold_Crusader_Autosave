@@ -389,17 +389,27 @@ local function saveSettings(settings)
   if store == nil then
     return
   end
-  local file, message = store:open(SETTINGS_FILE, "w")
-  if file == nil then
-    log(WARNING, "autosave: could not write " .. SETTINGS_FILE .. ": " .. tostring(message))
-    return
+  local temporary = SETTINGS_FILE .. ".tmp"
+  local file, message = store:open(temporary, "w")
+  local ok = file ~= nil
+  if ok then
+    ok, message = file:write(
+      "# Autosave module settings. The in-game Save dialog updates this file.\n",
+      "# name: autosaves are written as <name>_1 .. <name>_5 (letters, digits, space, - _ ( ), at most 30).\n",
+      "enabled = " .. tostring(settings.enabled) .. "\n",
+      "minutes = " .. tostring(settings.minutes) .. "\n",
+      "name = " .. settings.name .. "\n")
+    local closed, closeMessage = file:close()
+    if ok and not closed then
+      ok, message = false, closeMessage
+    end
   end
-  file:write("# Autosave module settings. The in-game Save dialog updates this file.\n")
-  file:write("# name: autosaves are written as <name>_1 .. <name>_5 (letters, digits, space, - _ ( ), at most 30).\n")
-  file:write("enabled = " .. tostring(settings.enabled) .. "\n")
-  file:write("minutes = " .. tostring(settings.minutes) .. "\n")
-  file:write("name = " .. settings.name .. "\n")
-  file:close()
+  if ok then
+    ok, message = store:rename(temporary, SETTINGS_FILE)
+  end
+  if not ok then
+    log(WARNING, "autosave: could not write " .. SETTINGS_FILE .. ": " .. tostring(message))
+  end
 end
 
 ---Reads the settings from user data. The first time, they are taken over from the file older
