@@ -23,6 +23,13 @@ options:
       min: 1
       max: 5
       step: 1
+  - url: autosave.editor_maps
+    name: autosave-editor-maps
+    text: '{{editor_maps}}'
+    tooltip: '{{editor_maps_tooltip}}'
+    display: Switch
+    contents:
+      value: true
 - display: GroupBox
   category:
   - '{{qol}}'

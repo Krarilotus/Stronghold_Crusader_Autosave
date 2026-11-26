@@ -1,4 +1,6 @@
 autosave_group: Autosaves
+editor_maps: Autosave maps in the map editor
+editor_maps_tooltip: While editing a map that has been saved or loaded, keep a copy named "<map>_autosave". It is deleted once you save the map yourself. Default on.
 delete_after_days: Days to keep discarded files
 delete_after_days_tooltip: 0 never deletes them. Otherwise discarded files can be restored until they
   expire.

@@ -35,7 +35,7 @@ focus_checked:
 cmp dword [stateEnabled], 0
 je reset_timer
 cmp dword [gameMode2], mapEditorMode
-je reset_timer
+je map_editor
 mov eax, dword [currentGameMode]
 cmp eax, scenarioMode
 je single_player
@@ -46,6 +46,15 @@ mov ecx, gameCore
 call isInGameScreen
 test eax, eax
 je reset_timer
+jmp on_map
+map_editor:
+cmp dword [screenId], mapEditorScreen
+je on_map
+mov ecx, gameCore
+call isInGameScreen
+test eax, eax
+je reset_timer
+on_map:
 cmp dword [gamePaused], 0
 jne frame_done
 cmp dword [menuGuard], -1

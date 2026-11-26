@@ -9,7 +9,7 @@ and Save dialogs. Works with `Stronghold Crusader.exe` and `Stronghold_Crusader_
 * **Autosaves** every few minutes into `Autosave_1` .. `Autosave_5`. The game writes a fresh
   save first. An incomplete write leaves the numbered files in place. If a rename fails after
   writing, Autosave restores the numbering where possible and leaves recovery files.
-  Autosave runs in single-player sessions outside the map editor. It pauses while Recorder
+  Game autosaves run in single-player sessions. It pauses while Recorder
   is recording, playing or changing worlds.
   The clock only runs while you actually play - a paused game, an open menu, an inactive game
   window or being outside a game does not count.
@@ -22,9 +22,17 @@ and Save dialogs. Works with `Stronghold Crusader.exe` and `Stronghold_Crusader_
 * **Restore** (arrow) brings the most recently deleted file back, then the one before it, and so
   on. A name that is taken in the meantime becomes `... (restored)`.
 * **Open folder** opens the save or map folder in Explorer with the selected file highlighted.
+* **Map editor**: a named map is autosaved as `<name>_autosave.map` until you save it yourself.
 
 The buttons use the game's own sprites and fonts, so they look like the dialog around them. They
 are hidden in multiplayer.
+
+## Map editor
+
+While you edit a map that has been saved or loaded before, a copy of it is autosaved next to it
+as **<map name>_autosave.map**, on the same interval. The copy is deleted as soon as you save the
+map yourself. A map that has never been saved has no name yet and is not autosaved. Can be
+switched off in the UCP3 GUI.
 
 ## Installing
 
@@ -34,7 +42,7 @@ the version from `definition.yml`), then enable **Autosave** in the UCP3 GUI.
 ## Settings
 
 In the UCP3 GUI: whether autosaving starts switched on (default off), how many autosaves to keep
-(1-5) and how many days deleted files are kept (default 0 = never deleted).
+(1-5) whether named editor maps are autosaved, and how many days deleted files are kept (default 0 = never deleted).
 
 The interval, the on/off state and the autosave name live in `settings.txt` in the module's UCP
 user data folder (`ucp/userdata/autosave/` in the game's user folder). The Save dialog writes it;
