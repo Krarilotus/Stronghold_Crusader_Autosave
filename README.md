@@ -17,8 +17,8 @@ and Save dialogs. Works with `Stronghold Crusader.exe` and `Stronghold_Crusader_
   typed into it, and a button that switches autosaving on and off.
 * **Delete** (red cross) moves the selected save or map into a `staged for deletion` folder next
   to it, with the date and time it was deleted in front of its name. Staged files are deleted for
-  good at the next game start once they are old enough (default 7 days, 0 = delete immediately).
-  Files Windows refuses to delete stay there for you to remove.
+  good at the next game start once they are older than the configured number of days (default 0
+  = never). Files Windows refuses to delete stay there for you to remove.
 * **Restore** (arrow) brings the most recently deleted file back, then the one before it, and so
   on. A name that is taken in the meantime becomes `... (restored)`.
 * **Open folder** opens the save or map folder in Explorer with the selected file highlighted.
@@ -33,9 +33,13 @@ the version from `definition.yml`), then enable **Autosave** in the UCP3 GUI.
 
 ## Settings
 
-In the UCP3 GUI: how many autosaves to keep (1-5) and how many days deleted files are kept.
+In the UCP3 GUI: whether autosaving starts switched on (default off), how many autosaves to keep
+(1-5) and how many days deleted files are kept (default 0 = never deleted).
 
-The interval, the on/off state and the autosave name live in `ucp/autosave-settings.txt`:
+The interval, the on/off state and the autosave name live in `settings.txt` in the module's UCP
+user data folder (`ucp/userdata/autosave/` in the game's user folder). The Save dialog writes it;
+once it exists, its on/off state overrides the GUI default. An older `ucp/autosave-settings.txt`
+in the game folder is taken over on first start.
 
 ```
 enabled = true

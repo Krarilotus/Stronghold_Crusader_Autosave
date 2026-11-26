@@ -9,7 +9,7 @@ game:
 - SHC==1.41
 - SHCE==1.41
 dependencies:
-  framework: '>=3.0.7'
+  framework: ^3.0.8
   frontend: '>=1.0.2'
   textResourceModifier: ^0.3.0
   cffi: ^1.0.0

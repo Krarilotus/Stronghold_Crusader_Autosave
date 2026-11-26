@@ -1,8 +1,9 @@
 autosave_group: Autosaves
 delete_after_days: Days to keep discarded files
-delete_after_days_tooltip: 0 deletes immediately. Otherwise discarded files can be restored until they
+delete_after_days_tooltip: 0 never deletes them. Otherwise discarded files can be restored until they
   expire.
 delete_group: Discarded saves and maps
+enabled: Autosave on by default
 qol: Quality of Life
 versions: Autosaves to keep
 tags.interface: Interface

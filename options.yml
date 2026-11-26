@@ -8,6 +8,12 @@ options:
   text: '{{versions_help}}'
   hasHeader: true
   children:
+  - url: autosave.enabled
+    name: autosave-enabled
+    text: '{{enabled}}'
+    display: Switch
+    contents:
+      value: false
   - url: autosave.versions
     name: autosave-versions
     text: '{{versions}}'
@@ -29,7 +35,7 @@ options:
     text: '{{delete_after_days}}'
     display: Slider
     contents:
-      value: 7
+      value: 0
       min: 0
       max: 3650
       step: 1

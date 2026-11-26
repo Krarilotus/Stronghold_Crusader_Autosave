@@ -1,8 +1,9 @@
 autosave_group: Sauvegardes automatiques
 delete_after_days: Durée de conservation des fichiers supprimés (jours)
-delete_after_days_tooltip: 0 supprime immédiatement. Sinon, les fichiers restent récupérables jusqu'à
+delete_after_days_tooltip: 0 ne supprime jamais. Sinon, les fichiers restent récupérables jusqu'à
   expiration.
 delete_group: Sauvegardes et cartes supprimées
+enabled: Sauvegarde auto activée par défaut
 qol: Qualité de vie
 versions: Sauvegardes automatiques à garder
 tags.interface: Interface

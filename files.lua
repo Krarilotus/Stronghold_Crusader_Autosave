@@ -251,20 +251,6 @@ function files.stage(path, now, related)
   return target
 end
 
----Deletes `path` for good. When Windows refuses, the file is staged instead so the player can
----remove it by hand. Returns "deleted" or "staged" plus the staged path, or nil and a reason.
-function files.remove(path, now, related)
-  local removed, message = files.delete(path)
-  if removed then
-    return "deleted"
-  end
-  local staged = files.stage(path, now, related)
-  if staged ~= nil then
-    return "staged", staged
-  end
-  return nil, message
-end
-
 ---The staged files that belong to `directory`, with the time they were deleted.
 function files.stagedFiles(directory)
   local staging = files.stagingDirectory(directory)
@@ -314,12 +300,12 @@ function files.restoreNewest(directories, extension)
 end
 
 ---Deletes the staged files of `directories` that were deleted at least `days` days before
----`now` (all of them for 0 days). Files Windows will not delete stay for the player.
+---`now`. Files Windows will not delete stay for the player.
 function files.purgeStaged(directories, days, now)
   local removed, kept = 0, 0
   for _, directory in ipairs(directories) do
     for _, entry in ipairs(files.stagedFiles(directory)) do
-      if days <= 0 or now - entry.time >= days * SECONDS_PER_DAY then
+      if now - entry.time >= days * SECONDS_PER_DAY then
         local done, message = files.delete(entry.path)
         if done then
           removed = removed + 1

@@ -34,17 +34,17 @@
 --     (files.lua) and then run the dialog's own opener again to rebuild the list; the opener
 --     keeps the row selection and scroll position.
 --
--- The interval, the on/off state and the autosave name are remembered in
--- ucp/autosave-settings.txt. How many autosaves to keep and how long deleted files are kept
+-- The interval, the on/off state and the autosave name are remembered in the module's user
+-- data folder as settings.txt. How many autosaves to keep and how long deleted files are kept
 -- are UCP settings.
 
 local templates = require("templates")
 local files = require("files")
 local rotation = require("rotation")
 
-local SETTINGS_FILE = "ucp/autosave-settings.txt"
+local SETTINGS_FILE = "settings.txt"
+local LEGACY_SETTINGS_FILE = "ucp/autosave-settings.txt"
 
-local DEFAULT_ENABLED = true
 local DEFAULT_MINUTES = 5
 local DEFAULT_SAVE_NAME = "Autosave"
 local MIN_MINUTES = 1
@@ -55,7 +55,7 @@ local MAX_BASE_NAME_LENGTH = MAX_SAVE_NAME_LENGTH - 2 -- room for "_1" .. "_5"
 
 local DEFAULT_VERSIONS = 5
 local MAX_VERSIONS = 5
-local DEFAULT_DELETE_AFTER_DAYS = 7
+local DEFAULT_DELETE_AFTER_DAYS = 0
 local MAX_DELETE_AFTER_DAYS = 3650
 
 local LABELS = require("messages").english
@@ -139,6 +139,7 @@ local SCREEN_MAP_EDITOR = 0x11 -- the editor: Save writes .map
 local SCREEN_SIEGE_EDITOR = 0x2F -- the unused siege editor: .tmp
 
 local MENU_ITEM_SIZE = 0x50
+local MOST_MENU_ITEMS = 200 -- bound for finding the end marker
 local MENU_ITEM_LAST_ENTRY = 0x66
 local MENU_ITEM_CLICKABLE = 3
 local MENU_ITEM_PER_FRAME = 0
@@ -361,16 +362,9 @@ end
 
 -- Settings ----------------------------------------------------------------------------------
 
-local function loadSettings()
-  local settings = {
-    enabled = DEFAULT_ENABLED,
-    minutes = DEFAULT_MINUTES,
-    name = DEFAULT_SAVE_NAME,
-  }
-  local file = io.open(SETTINGS_FILE, "r")
-  if file == nil then
-    return settings
-  end
+local store = nil -- userdata.interface(), available from afterInit
+
+local function readSettings(settings, file, source)
   for line in file:lines() do
     local key, value = line:match("^%s*([%a_]+)%s*=%s*(.-)%s*$")
     if key == "enabled" then
@@ -384,16 +378,18 @@ local function loadSettings()
       if isValidSaveName(value) then
         settings.name = value
       else
-        log(WARNING, "autosave: ignoring save name '" .. value .. "' in " .. SETTINGS_FILE)
+        log(WARNING, "autosave: ignoring save name '" .. value .. "' in " .. source)
       end
     end
   end
   file:close()
-  return settings
 end
 
 local function saveSettings(settings)
-  local file, message = io.open(SETTINGS_FILE, "w")
+  if store == nil then
+    return
+  end
+  local file, message = store:open(SETTINGS_FILE, "w")
   if file == nil then
     log(WARNING, "autosave: could not write " .. SETTINGS_FILE .. ": " .. tostring(message))
     return
@@ -406,10 +402,27 @@ local function saveSettings(settings)
   file:close()
 end
 
+---Reads the settings from user data. The first time, they are taken over from the file older
+---versions wrote into the game folder.
+local function loadSettings(settings)
+  store = userdata.interface()
+  local file = store:open(SETTINGS_FILE, "r")
+  if file ~= nil then
+    readSettings(settings, file, SETTINGS_FILE)
+    return
+  end
+  file = io.open(LEGACY_SETTINGS_FILE, "r")
+  if file ~= nil then
+    readSettings(settings, file, LEGACY_SETTINGS_FILE)
+    saveSettings(settings)
+  end
+end
+
 -- Setup -------------------------------------------------------------------------------------
 
----Finds a dialog's item table from its modal constructor, checks it has `count` items, and
----returns the table, its static initializer and the menu.
+---Finds a dialog's item table from its modal constructor, checks it has at least the `count`
+---shipped items (other modules may have appended theirs), and returns the table, its item
+---count, its static initializer and the menu.
 local function resolveDialog(modalPattern, count, purpose)
   local dialog = {}
   dialog.menu = core.readInteger(scan(modalPattern, purpose) + OFFSET_MODAL_MENU)
@@ -427,13 +440,13 @@ local function resolveDialog(modalPattern, count, purpose)
     return core.readInteger(dialog.itemTable + index * MENU_ITEM_SIZE + offset)
   end
   local found = 0
-  while found <= count and dialog.item(found, ITEM_TYPE) ~= MENU_ITEM_LAST_ENTRY do
+  while found <= MOST_MENU_ITEMS and dialog.item(found, ITEM_TYPE) ~= MENU_ITEM_LAST_ENTRY do
     found = found + 1
   end
-  if found ~= count then
+  if found < count or found > MOST_MENU_ITEMS then
     error(purpose .. "'s item table is not the one this module knows")
   end
-  dialog.count = count
+  dialog.count = found
   return dialog
 end
 
@@ -841,27 +854,12 @@ local function enable(settings, options)
       log(WARNING, "autosave: the selected file was not found: " .. tostring(path))
       return
     end
-    local now = os.time()
-    local directories = listDirectories(context)
-    local result, detail
-    if options.deleteAfterDays == 0 then
-      result, detail = files.remove(path, now, directories)
-    else
-      local staged, message = files.stage(path, now, directories)
-      if staged ~= nil then
-        result, detail = "staged", staged
-      else
-        detail = message
-      end
-    end
-    if result == "deleted" then
-      log(INFO, "autosave: deleted " .. path)
-    elseif result == "staged" then
-      log(INFO, string.format("autosave: moved %s to %s", path, detail))
-    else
-      log(WARNING, string.format("autosave: could not delete %s: %s", path, tostring(detail)))
+    local staged, message = files.stage(path, os.time(), listDirectories(context))
+    if staged == nil then
+      log(WARNING, string.format("autosave: could not delete %s: %s", path, tostring(message)))
       return
     end
+    log(INFO, string.format("autosave: moved %s to %s", path, staged))
     refreshDialog(context)
   end
 
@@ -960,8 +958,11 @@ local function enable(settings, options)
     end
   end
 
-  ---At start-up: remove staged files older than the configured number of days.
+  ---At start-up: remove staged files older than the configured number of days (0 keeps them).
   local function purgeStagedFiles()
+    if options.deleteAfterDays == 0 then
+      return
+    end
     local directories = { saveDirectory() }
     for _, directory in ipairs(mapDirectories()) do
       table.insert(directories, directory)
@@ -1139,6 +1140,19 @@ local function enable(settings, options)
   installItemTable(game.load, loadTable)
 
   hooks.registerHookCallback("afterInit", function()
+    local ok, message = pcall(loadSettings, settings)
+    if not ok then
+      log(WARNING, "autosave: settings not loaded: " .. tostring(message))
+    end
+    core.writeInteger(state + STATE_ENABLED, settings.enabled and 1 or 0)
+    core.writeInteger(state + STATE_INTERVAL, settings.minutes * MS_PER_MINUTE)
+    log(INFO, string.format(
+      "autosave: %s, every %d min to '%s_1.sav' .. '_%d', deleted files purged after %d day(s) (0 = never).",
+      settings.enabled and "on" or "off", settings.minutes, settings.name, options.versions,
+      options.deleteAfterDays))
+  end)
+
+  hooks.registerHookCallback("afterInit", function()
     -- CR.TEX is now loaded; the text owner selects and encodes the game language.
     local owner = modules.textResourceModifier
     local texts = require("messages")[owner:GetLanguage():lower()] or LABELS
@@ -1160,11 +1174,6 @@ local function enable(settings, options)
   core.writeCode(game.frameHook, {
     0xE9, core.itob(core.getRelativeAddress(game.frameHook, frameHook, -5)),
   })
-
-  log(INFO, string.format(
-    "autosave: %s, every %d min to '%s_1.sav' .. '_%d', deleted files kept %d day(s).",
-    settings.enabled and "on" or "off", settings.minutes, settings.name, options.versions,
-    options.deleteAfterDays))
 end
 
 return {
@@ -1176,7 +1185,11 @@ return {
       deleteAfterDays = integerOption(config.delete_after_days, 0, MAX_DELETE_AFTER_DAYS,
         DEFAULT_DELETE_AFTER_DAYS),
     }
-    local settings = loadSettings()
+    local settings = {
+      enabled = config.enabled == true,
+      minutes = DEFAULT_MINUTES,
+      name = DEFAULT_SAVE_NAME,
+    }
     local ok, message = pcall(enable, settings, options)
     if not ok then
       log(WARNING, "autosave: not active: " .. tostring(message))

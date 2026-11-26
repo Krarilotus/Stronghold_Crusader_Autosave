@@ -1,6 +1,5 @@
-<config><files>
+<module><files>
   <file src="LICENSE" />
-  <file src="config.yml" />
   <file src="definition.yml" />
   <file src="init.lua" />
   <file src="files.lua" />
@@ -10,4 +9,4 @@
   <file src="templates.lua" />
   <file src="messages.lua" />
   <file src="CREDITS.md" />
-</files></config>
+</files></module>

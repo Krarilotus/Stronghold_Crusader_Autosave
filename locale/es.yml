@@ -1,7 +1,8 @@
 autosave_group: Autoguardados
 delete_after_days: Días para conservar archivos eliminados
-delete_after_days_tooltip: 0 elimina inmediatamente. Los demás valores permiten restaurarlos antes de que caduquen.
+delete_after_days_tooltip: 0 nunca elimina. Los demás valores permiten restaurarlos antes de que caduquen.
 delete_group: Partidas y mapas eliminados
+enabled: Autoguardado activado por defecto
 qol: Calidad de vida
 versions: Autoguardados a conservar
 tags.interface: Interfaz
