@@ -346,6 +346,9 @@ local function clampMinutes(minutes)
 end
 
 local function integerOption(value, minimum, maximum, default)
+  if type(value) == "table" then
+    value = value.sliderValue
+  end
   local number = tonumber(value)
   if number == nil then
     return default
