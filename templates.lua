@@ -52,6 +52,8 @@ if editorMapsEnabled = 0
 jmp reset_timer
 else
 cmp dword [screenId], mapEditorScreen
+je on_map
+cmp dword [screenId], mapLandscapingScreen
 jne reset_timer
 end if
 on_map:
@@ -74,6 +76,16 @@ popfd
 popad
 mov ecx, gameCore
 jmp resumeAddress
+]]
+
+-- The save command normally selects its format using the active screen.
+templates.mapSaveDispatch = [[
+mov eax, [screenId]
+cmp dword [stateEditorSave], 0
+je original_screen
+mov eax, mapEditorScreen
+original_screen:
+jmp resumeMapSaveDispatch
 ]]
 
 -- Saves the game under the autosave name.

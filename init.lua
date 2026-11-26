@@ -105,6 +105,8 @@ local READ_DONE_AOB = "89 1D ? ? ? ? C7 05 ? ? ? ? FF FF FF FF 89 15 ? ? ? ? 75 
 local SIZE_READ_DONE_HOOK = 6
 local NEW_EDITOR_MAP_AOB = "56 50 B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? B9 ? ? ? ? 89 3D ? ? ? ? E8"
 local SIZE_NEW_EDITOR_MAP_HOOK = 7
+local MAP_SAVE_DISPATCH_AOB = "A1 ? ? ? ? 83 F8 11 0F 84 ? ? ? ? 83 F8 2F 0F 84 ? ? ? ? A1"
+local SIZE_MAP_SAVE_DISPATCH = 5
 local savingEditorMap = false
 
 -- Main loop, after the tick loop: mov [msPerTick], eax / mov ecx, gameCore /
@@ -150,6 +152,7 @@ local OFFSET_SCREEN_ID = 0x0C -- GameCore.currentScreen
 -- Screens on which the dialogs list maps instead of saved games.
 local SCREEN_SCENARIO_EDITOR = 0x2C -- main menu map editor: Load lists .map
 local SCREEN_MAP_EDITOR = 0x11 -- the editor: Save writes .map
+local SCREEN_MAP_LANDSCAPING = 0x0C
 local SCREEN_SIEGE_EDITOR = 0x2F -- the unused siege editor: .tmp
 
 local MENU_ITEM_SIZE = 0x50
@@ -283,6 +286,7 @@ local STATE_LAST_TIME = 0x0C
 local STATE_DELTA = 0x10
 local STATE_FOCUSED = 0x14
 local STATE_NAME_LENGTH = 0x18
+local STATE_EDITOR_SAVE = 0x1C
 local STATE_SIZE = 0x20
 local MAX_FRAME_MS = 1000
 local MS_PER_MINUTE = 60000
@@ -948,8 +952,7 @@ local function enable(settings, options)
   end
 
   local function onSave()
-    if core.readInteger(game.gameMode2) ~= MAP_EDITOR_MODE
-      or core.readInteger(game.gameCore + OFFSET_SCREEN_ID) ~= SCREEN_MAP_EDITOR then
+    if core.readInteger(game.gameMode2) ~= MAP_EDITOR_MODE then
       return
     end
     local path = activeMapPath()
@@ -979,7 +982,7 @@ local function enable(settings, options)
     end
   end
 
-  local editorWriteDone, editorReadDone, newEditorMap
+  local editorWriteDone, editorReadDone, newEditorMap, mapSaveDispatch
   if options.editorMaps then
     local function bind(pattern, purpose)
       local address, reason = core.AOBScanUnique(pattern)
@@ -991,6 +994,9 @@ local function enable(settings, options)
         "the active resource type")
       editorReadDone = bind(READ_DONE_AOB, "map load completion")
       newEditorMap = bind(NEW_EDITOR_MAP_AOB, "new map creation")
+      mapSaveDispatch = bind(MAP_SAVE_DISPATCH_AOB, "map save dispatch")
+      assert(core.readInteger(mapSaveDispatch + 1) == game.gameCore + OFFSET_SCREEN_ID,
+        "map save dispatch has an unexpected screen field")
       editorWriteDone = bind(WRITE_DONE_AOB, "map save completion")
     end)
     if not ok then log(WARNING, "map editor autosaves unavailable: " .. tostring(reason)) end
@@ -1022,6 +1028,7 @@ local function enable(settings, options)
         local copy = name .. AUTOSAVE_MAP_SUFFIX
         writeCString(saveName, copy)
         savingEditorMap = true
+        core.writeInteger(state + STATE_EDITOR_SAVE, 1)
         core.writeInteger(state + STATE_NAME_LENGTH, #copy)
       end
       return
@@ -1045,6 +1052,7 @@ local function enable(settings, options)
   local function finishAutosave()
     if savingEditorMap then
       savingEditorMap = false
+      core.writeInteger(state + STATE_EDITOR_SAVE, 0)
       return
     end
     local path = pending
@@ -1177,10 +1185,12 @@ local function enable(settings, options)
     loadModalId = LOAD_MODAL_ID,
     mapEditorMode = MAP_EDITOR_MODE,
     editorMapsEnabled = editorWriteDone and 1 or 0,
+    stateEditorSave = state + STATE_EDITOR_SAVE,
     scenarioMode = SCENARIO_MODE,
     skirmishMode = SKIRMISH_MODE,
     scenarioEditorScreen = SCREEN_SCENARIO_EDITOR,
     mapEditorScreen = SCREEN_MAP_EDITOR,
+    mapLandscapingScreen = SCREEN_MAP_LANDSCAPING,
     siegeEditorScreen = SCREEN_SIEGE_EDITOR,
     maxFrameMs = MAX_FRAME_MS,
     textIndex = TEXT_INDEX,
@@ -1196,6 +1206,11 @@ local function enable(settings, options)
 
   values.autosaveRoutine = assemble(templates.autosaveRoutine, values)
   local frameHook = assemble(templates.frameHook, values)
+  local editorDispatch
+  if editorWriteDone then
+    values.resumeMapSaveDispatch = mapSaveDispatch + SIZE_MAP_SAVE_DISPATCH
+    editorDispatch = assemble(templates.mapSaveDispatch, values)
+  end
   local fileButtonRender = assemble(templates.fileButtonRender, values)
 
   local function wrapAction(original, template)
@@ -1282,6 +1297,9 @@ local function enable(settings, options)
   end)
 
   if editorWriteDone then
+    core.writeCode(mapSaveDispatch, {
+      0xE9, core.itob(core.getRelativeAddress(mapSaveDispatch, editorDispatch, -SIZE_MAP_SAVE_DISPATCH)),
+    })
     core.detourCode(function(registers)
       editorMap, editorCopy = activeMapPath(), nil
       return registers
