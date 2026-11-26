@@ -98,9 +98,10 @@ local OFFSET_MODAL_MENU = 1
 local EXECUTE_SAVE_AOB =
   "8B 44 24 04 F7 D8 1B C0 83 E0 0E 83 C0 20 6A 0E B9 ? ? ? ? A3 ? ? ? ? E8 ? ? ? ? C7 05 ? ? ? ? 0E 00 00 00"
 local OFFSET_SAVE_MODAL_OPERAND = 33
-local OFFSET_PENDING_ACTION = 22
-local OFFSET_SAVE_EXECUTOR_JUMP = 49
-local SIZE_SAVE_EXECUTOR_HOOK = 6 -- sub esp, 0x3F4
+-- Successful write epilogue, after the ten bytes observed by Map PNG.
+local WRITE_DONE_AOB = "5F 5E 5D 5B 83 C4 10 C2 04 00 8B FF ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 00 04 04 04 04"
+local SIZE_WRITE_DONE_HOOK = 7
+local savingEditorMap = false
 
 -- Main loop, after the tick loop: mov [msPerTick], eax / mov ecx, gameCore /
 -- call isInGameScreen / test eax, eax / je / mov ecx, ... / call.
@@ -146,7 +147,6 @@ local OFFSET_SCREEN_ID = 0x0C -- GameCore.currentScreen
 local SCREEN_SCENARIO_EDITOR = 0x2C -- main menu map editor: Load lists .map
 local SCREEN_MAP_EDITOR = 0x11 -- the editor: Save writes .map
 local SCREEN_SIEGE_EDITOR = 0x2F -- the unused siege editor: .tmp
-local PENDING_ACTION_SAVE = 0x20
 
 local MENU_ITEM_SIZE = 0x50
 local MOST_MENU_ITEMS = 200 -- bound for finding the end marker
@@ -573,10 +573,6 @@ local function resolveGame()
 
   game.executeSave = scan(EXECUTE_SAVE_AOB, "the save command")
   game.menuGuard = core.readInteger(game.executeSave + OFFSET_SAVE_MODAL_OPERAND)
-  game.pendingAction = core.readInteger(game.executeSave + OFFSET_PENDING_ACTION)
-  expectBytes(game.executeSave + OFFSET_SAVE_EXECUTOR_JUMP, { 0xE9 }, "the save executor")
-  game.saveExecutor = game.executeSave + OFFSET_SAVE_EXECUTOR_JUMP + 5
-    + core.readInteger(game.executeSave + OFFSET_SAVE_EXECUTOR_JUMP + 1)
   game.timeGetTimeSlot = core.readInteger(
     scan(TIME_GET_TIME_AOB, "timeGetTime") + OFFSET_TIME_GET_TIME_SLOT)
   game.gameMode2 = core.readInteger(scan(GAME_MODE_2_AOB, "the map editor flag") + OFFSET_GAME_MODE_2)
@@ -677,7 +673,7 @@ local function enable(settings, options)
   local state = core.allocate(STATE_SIZE, true)
   core.writeInteger(state + STATE_ENABLED, settings.enabled and 1 or 0)
   core.writeInteger(state + STATE_INTERVAL, settings.minutes * MS_PER_MINUTE)
-  local saveName = allocateCString("", MAX_SAVE_NAME_LENGTH + 1)
+  local saveName = allocateCString("", MAX_MAP_NAME_LENGTH + #AUTOSAVE_MAP_SUFFIX + 1)
 
   local labelEnabled = allocateCString(LABEL_ENABLED)
   local labelDisabled = allocateCString(LABEL_DISABLED)
@@ -697,13 +693,17 @@ local function enable(settings, options)
   -- Game files --------------------------------------------------------------------------------
 
   ---The full path the game uses for `fileName` ("x.sav" / "x.map").
+  local function currentPath(pathType)
+    return core.readString(game.resourceManager + PATHS + pathType * NAME_SIZE)
+  end
+
   local function gamePath(pathType, fileName)
     if #fileName >= NAME_SIZE then
       return nil
     end
     writeCString(pathName, fileName)
     setPath(game.resourceManager, pathType, pathName)
-    return core.readString(game.resourceManager + PATHS + pathType * NAME_SIZE)
+    return currentPath(pathType)
   end
 
   local function saveDirectory()
@@ -927,8 +927,6 @@ local function enable(settings, options)
 
   -- Autosave versions -------------------------------------------------------------------------
 
-  local savingEditorMap = false
-
   -- Maps in the editor ------------------------------------------------------------------------
 
   ---The name the editor's Save dialog holds, which is the current map's name once it has been
@@ -946,12 +944,7 @@ local function enable(settings, options)
     return name
   end
 
-  ---"My map" -> "My map_autosave", shortened so the name still fits the dialog.
   local function autosaveMapName(name)
-    local keep = MAX_MAP_NAME_LENGTH - #AUTOSAVE_MAP_SUFFIX
-    if #name > keep then
-      name = name:sub(1, keep):match("^(.-)%s*$")
-    end
     return name .. AUTOSAVE_MAP_SUFFIX
   end
 
@@ -972,18 +965,18 @@ local function enable(settings, options)
     return name
   end
 
-  ---Called by the save executor, i.e. after every save the game performs. A map saved by hand
-  ---makes its autosave copy pointless, so that copy goes.
   local function onSave()
-    if savingEditorMap or core.readInteger(game.pendingAction) ~= PENDING_ACTION_SAVE
-      or core.readInteger(game.gameMode2) ~= MAP_EDITOR_MODE then
+    if savingEditorMap or core.readInteger(game.gameMode2) ~= MAP_EDITOR_MODE
+      or core.readInteger(game.gameCore + OFFSET_SCREEN_ID) ~= SCREEN_MAP_EDITOR then
       return
     end
     local name = editorMapName()
     if name == nil or name:sub(-#AUTOSAVE_MAP_SUFFIX) == AUTOSAVE_MAP_SUFFIX then
       return
     end
-    local copy = mapPath(autosaveMapName(name))
+    local path = currentPath(PATH_TYPE_MAP)
+    if files.nameOf(path):lower() ~= (name .. ".map"):lower() then return end
+    local copy = files.directoryOf(path) .. autosaveMapName(name) .. ".map"
     if files.exists(copy) then
       local deleted, message = files.delete(copy)
       if deleted then
@@ -992,6 +985,13 @@ local function enable(settings, options)
         log(WARNING, string.format("autosave: could not delete %s: %s", copy, tostring(message)))
       end
     end
+  end
+
+  local editorWriteDone
+  if options.editorMaps then
+    local reason
+    editorWriteDone, reason = core.AOBScanUnique(WRITE_DONE_AOB)
+    if not editorWriteDone then log(WARNING, "map editor autosaves unavailable: " .. reason) end
   end
 
   local pending, sequence = nil, 0
@@ -1015,7 +1015,7 @@ local function enable(settings, options)
     end
 
     if core.readInteger(game.gameMode2) == MAP_EDITOR_MODE then
-      local name = options.editorMaps and savedEditorMap()
+      local name = editorWriteDone and savedEditorMap()
       if name then
         local copy = autosaveMapName(name)
         writeCString(saveName, copy)
@@ -1174,6 +1174,7 @@ local function enable(settings, options)
     saveModalId = SAVE_MODAL_ID,
     loadModalId = LOAD_MODAL_ID,
     mapEditorMode = MAP_EDITOR_MODE,
+    editorMapsEnabled = editorWriteDone and 1 or 0,
     scenarioMode = SCENARIO_MODE,
     skirmishMode = SKIRMISH_MODE,
     scenarioEditorScreen = SCREEN_SCENARIO_EDITOR,
@@ -1278,13 +1279,13 @@ local function enable(settings, options)
     end
   end)
 
-  core.detourCode(function(registers)
-    local ok, message = pcall(onSave)
-    if not ok then
-      log(WARNING, "autosave: handling a manual save failed: " .. tostring(message))
-    end
-    return registers
-  end, game.saveExecutor, SIZE_SAVE_EXECUTOR_HOOK)
+  if editorWriteDone then
+    core.detourCode(function(registers)
+      local ok, message = pcall(onSave)
+      if not ok then log(WARNING, "could not clean up editor autosave: " .. tostring(message)) end
+      return registers
+    end, editorWriteDone, SIZE_WRITE_DONE_HOOK)
+  end
 
   core.writeCode(game.frameHook, {
     0xE9, core.itob(core.getRelativeAddress(game.frameHook, frameHook, -5)),
@@ -1299,7 +1300,7 @@ return {
       versions = integerOption(config.versions, 1, MAX_VERSIONS, DEFAULT_VERSIONS),
       deleteAfterDays = integerOption(config.delete_after_days, 0, MAX_DELETE_AFTER_DAYS,
         DEFAULT_DELETE_AFTER_DAYS),
-      editorMaps = config.editor_maps ~= false and config.editor_maps ~= 0,
+      editorMaps = config.editor_maps == true,
     }
     local settings = {
       enabled = config.enabled == true,
@@ -1313,5 +1314,7 @@ return {
   end,
 
   disable = function(self, config) end,
+
+  isSavingEditorMap = function() return savingEditorMap end,
 
 }

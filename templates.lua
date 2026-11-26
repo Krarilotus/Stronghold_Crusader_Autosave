@@ -48,12 +48,12 @@ test eax, eax
 je reset_timer
 jmp on_map
 map_editor:
+if editorMapsEnabled = 0
+jmp reset_timer
+else
 cmp dword [screenId], mapEditorScreen
-je on_map
-mov ecx, gameCore
-call isInGameScreen
-test eax, eax
-je reset_timer
+jne reset_timer
+end if
 on_map:
 cmp dword [gamePaused], 0
 jne frame_done
@@ -78,8 +78,7 @@ jmp resumeAddress
 
 -- Saves the game under the autosave name.
 --
--- Set aside the player's text and focus, write a temporary save through the
--- native command, then restore the text fields before checking and rotating.
+-- Preserve the player's text and focus around the native save command.
 templates.autosaveRoutine = [[
 push ebx
 push esi

@@ -29,7 +29,7 @@ options:
     tooltip: '{{editor_maps_tooltip}}'
     display: Switch
     contents:
-      value: true
+      value: false
 - display: GroupBox
   category:
   - '{{qol}}'
