@@ -965,6 +965,7 @@ local function enable(settings, options)
     if not name then return end
     local prior = editorMap
     editorMap = path
+    core.writeInteger(state + STATE_ELAPSED, 0)
     if name:lower():sub(-#AUTOSAVE_MAP_SUFFIX) == AUTOSAVE_MAP_SUFFIX then
       editorCopy = nil
       return
@@ -1302,10 +1303,12 @@ local function enable(settings, options)
     })
     core.detourCode(function(registers)
       editorMap, editorCopy = activeMapPath(), nil
+      core.writeInteger(state + STATE_ELAPSED, 0)
       return registers
     end, editorReadDone, SIZE_READ_DONE_HOOK)
     core.detourCode(function(registers)
       editorMap, editorCopy = nil, nil
+      core.writeInteger(state + STATE_ELAPSED, 0)
       return registers
     end, newEditorMap, SIZE_NEW_EDITOR_MAP_HOOK)
     core.detourCode(function(registers)
