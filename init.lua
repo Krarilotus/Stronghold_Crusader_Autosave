@@ -1373,49 +1373,6 @@ local function enable(settings, options)
     restoreSave()
     error(installProblem, 0)
   end
-  hooks.registerHookCallback("afterInit", updateSave)
-  hooks.registerHookCallback("afterInit", updateLoad)
-
-  hooks.registerHookCallback("afterInit", function()
-    local ok, message = pcall(loadSettings, settings)
-    if not ok then
-      log(WARNING, "autosave: settings not loaded: " .. tostring(message))
-    end
-    if editorWriteDone and store then
-      local loaded, copies = pcall(readEditorCopies)
-      if loaded then
-        editorCopies = copies
-      else
-        log(WARNING, "autosave: editor copy records not loaded: " .. tostring(copies))
-      end
-    end
-    core.writeInteger(state + STATE_ENABLED, settings.enabled and 1 or 0)
-    core.writeInteger(state + STATE_INTERVAL, settings.minutes * MS_PER_MINUTE)
-    log(INFO, string.format(
-      "autosave: %s, every %d min to '%s_1.sav' .. '_%d', deleted files purged after %d day(s) (0 = never).",
-      settings.enabled and "on" or "off", settings.minutes, settings.name, options.versions,
-      options.deleteAfterDays))
-  end)
-
-  hooks.registerHookCallback("afterInit", function()
-    -- CR.TEX is now loaded; the text owner selects and encodes the game language.
-    local owner = modules.textResourceModifier
-    local texts = require("messages")[owner:GetLanguage():lower()] or LABELS
-    local encoded = {}
-    for index, text in ipairs(texts) do
-      encoded[index] = owner:TransformText(text)
-      assert(not encoded[index]:match("^ERROR:"), "autosave: text encoding unavailable")
-    end
-    labelEnabled = allocateCString(encoded[1])
-    labelDisabled = allocateCString(encoded[2])
-    MINUTES_SUFFIX = encoded[3]
-    labelOpenFolder = allocateCString(encoded[4])
-    local ok, message = pcall(purgeStagedFiles)
-    if not ok then
-      log(WARNING, "autosave: cleaning up staged files failed: " .. tostring(message))
-    end
-  end)
-
   if editorWriteDone then
     local active, problem = installPatches(function(patch)
       patch(mapSaveDispatch, SIZE_MAP_SAVE_DISPATCH, core.writeCode, {
@@ -1449,16 +1406,57 @@ local function enable(settings, options)
       log(ERROR, "Map editor autosave is off: " .. tostring(problem))
     end
   end
+
+  if editorWriteDone and store then
+    local loaded, copies = pcall(readEditorCopies)
+    if loaded then
+      editorCopies = copies
+    else
+      log(WARNING, "autosave: editor copy records not loaded: " .. tostring(copies))
+    end
+  end
+  log(INFO, string.format(
+    "autosave: %s, every %d min to '%s_1.sav' .. '_%d', deleted files purged after %d day(s) (0 = never).",
+    settings.enabled and "on" or "off", settings.minutes, settings.name, options.versions,
+    options.deleteAfterDays))
+
+  local localized, localeProblem = pcall(function()
+    local owner = modules.textResourceModifier
+    local texts = require("messages")[owner:GetLanguage():lower()] or LABELS
+    local encoded = {}
+    for index, text in ipairs(texts) do
+      encoded[index] = owner:TransformText(text)
+      assert(not encoded[index]:match("^ERROR:"), "text encoding unavailable")
+    end
+    labelEnabled = allocateCString(encoded[1])
+    labelDisabled = allocateCString(encoded[2])
+    MINUTES_SUFFIX = encoded[3]
+    labelOpenFolder = allocateCString(encoded[4])
+  end)
+  if not localized then
+    log(WARNING, "autosave: dialog text not localized: " .. tostring(localeProblem))
+  end
+  local purged, purgeProblem = pcall(purgeStagedFiles)
+  if not purged then
+    log(WARNING, "autosave: cleaning up staged files failed: " .. tostring(purgeProblem))
+  end
 end
+
+local startup
+-- Userdata opens in afterInit. Extend the dialogs before other modules' enable-time
+-- callbacks rebind their controls to the final item tables.
+hooks.registerHookCallback("afterInit", function()
+  if startup then startup() end
+end)
 
 return {
 
   enable = function(self, config)
-    config = config or {}
-    if type(config) ~= "table" then
+    if config ~= nil and type(config) ~= "table" then
       log(ERROR, "Autosave: invalid settings type. Using defaults.")
       return
     end
+    config = config or {}
     local options = {
       versions = integerOption(config.versions, 1, MAX_VERSIONS, DEFAULT_VERSIONS, "save count"),
       deleteAfterDays = integerOption(config.delete_after_days, 0, MAX_DELETE_AFTER_DAYS,
@@ -1471,12 +1469,18 @@ return {
       name = DEFAULT_SAVE_NAME,
     }
     local dialogs = booleanOption(config.dialog_controls, "dialog_controls")
-    if not settings.enabled and not options.editorMaps and not dialogs and options.deleteAfterDays == 0 then
-      return
-    end
-    local ok, message = pcall(enable, settings, options)
-    if not ok then
-      log(ERROR, "Autosave is off. The game save and load code could not be installed: " .. tostring(message))
+    local requested = settings.enabled or options.editorMaps or dialogs or options.deleteAfterDays > 0
+    startup = function()
+      startup = nil
+      local loaded, loadProblem = pcall(loadSettings, settings)
+      if not loaded then
+        log(WARNING, "autosave: settings not loaded: " .. tostring(loadProblem))
+      end
+      if not requested and not settings.enabled then return end
+      local ok, message = pcall(enable, settings, options)
+      if not ok then
+        log(ERROR, "Autosave is off. The game save and load code could not be installed: " .. tostring(message))
+      end
     end
   end,
 
