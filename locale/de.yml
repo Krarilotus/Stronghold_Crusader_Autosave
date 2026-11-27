@@ -6,7 +6,7 @@ delete_after_days_tooltip: Verworfene Dateien verfallen nach dieser Anzahl Tage.
 delete_group: Gelöschte Spielstände und Karten
 enabled: Automatisches Speichern bei Erstinstallation aktiv
 qol: Komfort
-versions: Anzahl zu behaltender Spiel-Autosaves
+versions: Anzahl automatischer Spielstände
 tags.interface: Oberfläche
 tags.tools: Werkzeuge
 versions_help: Öffne im Einzelspieler „Speichern“, um das automatische Speichern umzuschalten und das Intervall in Minuten festzulegen.
