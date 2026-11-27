@@ -30,7 +30,7 @@
 --   * The timer runs in assembly in the main loop, right after the game ticks, so nothing
 --     calls into lua per frame unless the Save dialog is open. It also runs in the map
 --     editor and writes named copies as "<name>_autosave.map". The native writer's
---     completion epilogue removes a copy owned by this session after a manual save.
+--     completion epilogue removes a verified Autosave copy after a manual save.
 --   * The selected file of a dialog is resolved the way its Load / Save button does it
 --     (list order, file name table, the game's path builder). Delete and restore move files
 --     (files.lua) and then run the dialog's own opener again to rebuild the list; the opener
@@ -46,6 +46,7 @@ local rotation = require("rotation")
 
 local SETTINGS_FILE = "settings.txt"
 local LEGACY_SETTINGS_FILE = "ucp/autosave-settings.txt"
+local EDITOR_COPIES_FILE = "editor-copies.bin"
 
 local DEFAULT_MINUTES = 5
 local DEFAULT_SAVE_NAME = "Autosave"
@@ -404,31 +405,35 @@ local function readSettings(settings, file, source)
   file:close()
 end
 
-local function saveSettings(settings)
+local function saveUserData(name, mode, ...)
   if store == nil then
     return
   end
-  local temporary = SETTINGS_FILE .. ".tmp"
-  local file, message = store:open(temporary, "w")
+  local temporary = name .. ".tmp"
+  local file, message = store:open(temporary, mode)
   local ok = file ~= nil
   if ok then
-    ok, message = file:write(
-      "# Autosave module settings. The in-game Save dialog updates this file.\n",
-      "# name: autosaves are written as <name>_1 .. <name>_5 (letters, digits, space, - _ ( ), at most 30).\n",
-      "enabled = " .. tostring(settings.enabled) .. "\n",
-      "minutes = " .. tostring(settings.minutes) .. "\n",
-      "name = " .. settings.name .. "\n")
+    ok, message = file:write(...)
     local closed, closeMessage = file:close()
     if ok and not closed then
       ok, message = false, closeMessage
     end
   end
   if ok then
-    ok, message = store:rename(temporary, SETTINGS_FILE)
+    ok, message = store:rename(temporary, name)
   end
   if not ok then
-    log(WARNING, "autosave: could not write " .. SETTINGS_FILE .. ": " .. tostring(message))
+    log(WARNING, "autosave: could not write " .. name .. ": " .. tostring(message))
   end
+end
+
+local function saveSettings(settings)
+  saveUserData(SETTINGS_FILE, "w",
+    "# Autosave module settings. The in-game Save dialog updates this file.\n",
+    "# name: autosaves are written as <name>_1 .. <name>_5 (letters, digits, space, - _ ( ), at most 30).\n",
+    "enabled = " .. tostring(settings.enabled) .. "\n",
+    "minutes = " .. tostring(settings.minutes) .. "\n",
+    "name = " .. settings.name .. "\n")
 end
 
 ---Reads the settings from user data. The first time, they are taken over from the file older
@@ -934,8 +939,32 @@ local function enable(settings, options)
   -- Autosave versions -------------------------------------------------------------------------
 
   local editorMap, pendingEditorCopy
-  -- This session owns only the copies it observed the native writer complete.
   local editorCopies = {}
+  -- Map paths are in the game's ANSI encoding and file stamps are binary.
+  local copyRecord = "<s2s2s1"
+  local function readEditorCopies()
+    local file = store:open(EDITOR_COPIES_FILE, "rb")
+    if not file then return {} end
+    local data, message = file:read("a")
+    file:close()
+    assert(data, message)
+    local copies, offset = {}, 1
+    while offset <= #data do
+      local source, path, stamp
+      source, path, stamp, offset = string.unpack(copyRecord, data, offset)
+      copies[source] = { path = path, stamp = stamp }
+    end
+    return copies
+  end
+
+  local function saveEditorCopies()
+    local records = {}
+    for source, copy in pairs(editorCopies) do
+      records[#records + 1] = string.pack(copyRecord, source, copy.path, copy.stamp)
+    end
+    saveUserData(EDITOR_COPIES_FILE, "wb", table.concat(records))
+  end
+
   local function activeMapPath()
     if core.readInteger(game.resourceManager + ACTIVE_PATH_TYPE) == PATH_TYPE_MAP then
       return currentPath(PATH_TYPE_MAP)
@@ -961,6 +990,7 @@ local function enable(settings, options)
       if key == pendingEditorCopy:lower() then
         local stamp = files.editorCopyStamp(path)
         editorCopies[editorMap:lower()] = stamp and { path = path, stamp = stamp } or nil
+        saveEditorCopies()
       end
       return
     end
@@ -969,9 +999,14 @@ local function enable(settings, options)
     editorMap = path
     core.writeInteger(state + STATE_ELAPSED, 0)
     if name:lower():sub(-#AUTOSAVE_MAP_SUFFIX) == AUTOSAVE_MAP_SUFFIX then
+      local changed = false
       for source, copy in pairs(editorCopies) do
-        if key == copy.path:lower() then editorCopies[source] = nil end
+        if key == copy.path:lower() then
+          editorCopies[source] = nil
+          changed = true
+        end
       end
+      if changed then saveEditorCopies() end
       return
     end
     local copy = editorCopies[key]
@@ -981,12 +1016,14 @@ local function enable(settings, options)
       local deleted, message = files.delete(copy.path)
       if deleted then
         editorCopies[key] = nil
+        saveEditorCopies()
         log(INFO, "autosave: " .. name .. " was saved, deleted " .. copy.path)
       else
         log(WARNING, string.format("autosave: could not delete %s: %s", copy.path, tostring(message)))
       end
     elseif stamp ~= nil then
       editorCopies[key] = nil
+      saveEditorCopies()
     end
   end
 
@@ -1287,6 +1324,14 @@ local function enable(settings, options)
     local ok, message = pcall(loadSettings, settings)
     if not ok then
       log(WARNING, "autosave: settings not loaded: " .. tostring(message))
+    end
+    if editorWriteDone and store then
+      local loaded, copies = pcall(readEditorCopies)
+      if loaded then
+        editorCopies = copies
+      else
+        log(WARNING, "autosave: editor copy records not loaded: " .. tostring(copies))
+      end
     end
     core.writeInteger(state + STATE_ENABLED, settings.enabled and 1 or 0)
     core.writeInteger(state + STATE_INTERVAL, settings.minutes * MS_PER_MINUTE)
