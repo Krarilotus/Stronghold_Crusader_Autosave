@@ -29,9 +29,8 @@
 --     into that slot for the duration of the call and the player's text restored after.
 --   * The timer runs in assembly in the main loop, right after the game ticks, so nothing
 --     calls into lua per frame unless the Save dialog is open. It also runs in the map
---     editor, where a named map is autosaved next to itself as "<name>_autosave.map" and
---     that copy is deleted again when the map is saved by hand (a lua detour on the save
---     executor, the function both the dialog's Save button and the save command end in).
+--     editor and writes named copies as "<name>_autosave.map". The native writer's
+--     completion epilogue removes a copy owned by this session after a manual save.
 --   * The selected file of a dialog is resolved the way its Load / Save button does it
 --     (list order, file name table, the game's path builder). Delete and restore move files
 --     (files.lua) and then run the dialog's own opener again to rebuild the list; the opener
@@ -934,7 +933,9 @@ local function enable(settings, options)
 
   -- Autosave versions -------------------------------------------------------------------------
 
-  local editorMap, editorCopy
+  local editorMap, pendingEditorCopy
+  -- This session owns only the copies it observed the native writer complete.
+  local editorCopies = {}
   local function activeMapPath()
     if core.readInteger(game.resourceManager + ACTIVE_PATH_TYPE) == PATH_TYPE_MAP then
       return currentPath(PATH_TYPE_MAP)
@@ -955,29 +956,37 @@ local function enable(settings, options)
     end
     local path = activeMapPath()
     if not path then return end
+    local key = path:lower()
     if savingEditorMap then
-      editorCopy = path
+      if key == pendingEditorCopy:lower() then
+        local stamp = files.editorCopyStamp(path)
+        editorCopies[editorMap:lower()] = stamp and { path = path, stamp = stamp } or nil
+      end
       return
     end
     local name = files.nameOf(path):match("^(.+)%.[mM][aA][pP]$")
     if not name then return end
-    local prior = editorMap
     editorMap = path
     core.writeInteger(state + STATE_ELAPSED, 0)
     if name:lower():sub(-#AUTOSAVE_MAP_SUFFIX) == AUTOSAVE_MAP_SUFFIX then
-      editorCopy = nil
+      for source, copy in pairs(editorCopies) do
+        if key == copy.path:lower() then editorCopies[source] = nil end
+      end
       return
     end
-    local copy = path == prior and editorCopy
-      or files.directoryOf(path) .. name .. AUTOSAVE_MAP_SUFFIX .. ".map"
-    editorCopy = nil
-    if files.exists(copy) then
-      local deleted, message = files.delete(copy)
+    local copy = editorCopies[key]
+    if not copy then return end
+    local stamp = files.editorCopyStamp(copy.path)
+    if stamp == copy.stamp then
+      local deleted, message = files.delete(copy.path)
       if deleted then
-        log(INFO, "autosave: " .. name .. " was saved, deleted " .. copy)
+        editorCopies[key] = nil
+        log(INFO, "autosave: " .. name .. " was saved, deleted " .. copy.path)
       else
-        log(WARNING, string.format("autosave: could not delete %s: %s", copy, tostring(message)))
+        log(WARNING, string.format("autosave: could not delete %s: %s", copy.path, tostring(message)))
       end
+    elseif stamp ~= nil then
+      editorCopies[key] = nil
     end
   end
 
@@ -1020,7 +1029,22 @@ local function enable(settings, options)
       local name = editorWriteDone and savedEditorMap()
       if name then
         local copy = name .. AUTOSAVE_MAP_SUFFIX
+        -- The map path builder prefers existing files in the game directory.
+        local activeType = game.resourceManager + ACTIVE_PATH_TYPE
+        local previousType = core.readInteger(activeType)
+        local previousPath = currentPath(PATH_TYPE_MAP)
+        local target = gamePath(PATH_TYPE_MAP, copy .. ".map")
+        writeCString(game.resourceManager + PATHS + PATH_TYPE_MAP * NAME_SIZE, previousPath)
+        core.writeInteger(activeType, previousType)
+        if not target or target == "" then return end
+        local stamp = files.editorCopyStamp(target)
+        local owned = editorCopies[editorMap:lower()]
+        if stamp ~= false and not (owned and target:lower() == owned.path:lower()
+            and stamp == owned.stamp) then
+          return
+        end
         writeCString(saveName, copy)
+        pendingEditorCopy = target
         savingEditorMap = true
         core.writeInteger(state + STATE_EDITOR_SAVE, 1)
         core.writeInteger(state + STATE_NAME_LENGTH, #copy)
@@ -1046,6 +1070,7 @@ local function enable(settings, options)
   local function finishAutosave()
     if savingEditorMap then
       savingEditorMap = false
+      pendingEditorCopy = nil
       core.writeInteger(state + STATE_EDITOR_SAVE, 0)
       return
     end
@@ -1295,12 +1320,12 @@ local function enable(settings, options)
       0xE9, core.itob(core.getRelativeAddress(mapSaveDispatch, editorDispatch, -SIZE_MAP_SAVE_DISPATCH)),
     })
     core.detourCode(function(registers)
-      editorMap, editorCopy = activeMapPath(), nil
+      editorMap = activeMapPath()
       core.writeInteger(state + STATE_ELAPSED, 0)
       return registers
     end, editorReadDone, SIZE_READ_DONE_HOOK)
     core.detourCode(function(registers)
-      editorMap, editorCopy = nil, nil
+      editorMap = nil
       core.writeInteger(state + STATE_ELAPSED, 0)
       return registers
     end, newEditorMap, SIZE_NEW_EDITOR_MAP_HOOK)

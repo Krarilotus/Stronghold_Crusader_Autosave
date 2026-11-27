@@ -30,6 +30,11 @@ typedef struct AutosaveFindData {
   char name[260];
   char alternateName[14];
 } AutosaveFindData;
+typedef struct AutosaveFileInfo {
+  unsigned long attributes;
+  unsigned long createdLow, createdHigh, accessedLow, accessedHigh, writtenLow, writtenHigh;
+  unsigned long volume, sizeHigh, sizeLow, links, indexHigh, indexLow;
+} AutosaveFileInfo;
 int __stdcall CreateDirectoryA(const char *path, void *security);
 void * __stdcall FindFirstFileA(const char *pattern, AutosaveFindData *data);
 int __stdcall FindNextFileA(void *handle, AutosaveFindData *data);
@@ -47,6 +52,7 @@ unsigned long __stdcall GetFileSize(void *file, unsigned long *high);
 unsigned long __stdcall SetFilePointer(void *file, long offset, long *high, unsigned long origin);
 int __stdcall ReadFile(void *file, void *buffer, unsigned long size, unsigned long *read, void *overlap);
 int __stdcall CloseHandle(void *handle);
+int __stdcall GetFileInformationByHandle(void *file, AutosaveFileInfo *info);
 ]]
 
 local ffi, win, gameDirectory
@@ -114,6 +120,24 @@ function files.exists(path)
   end
   local attributes = win.GetFileAttributesA(path) & 0xFFFFFFFF
   return attributes ~= INVALID_FILE_ATTRIBUTES and (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0
+end
+
+-- A stamp identifies the file and its last write. False means the name is free.
+-- Nil means Windows could not confirm either case.
+function files.editorCopyStamp(path)
+  if not canUsePath(path) then return nil end
+  local file = win.CreateFileA(path, 0x80, 7, nil, 3, 128, nil)
+  if invalidHandle(file) then
+    if win.GetLastError() == 2 then return false end
+    return nil
+  end
+  local info = ffi.new("AutosaveFileInfo[1]")
+  local found = win.GetFileInformationByHandle(file, info) ~= 0
+  win.CloseHandle(file)
+  if not found then return nil end
+  local entry = info[0]
+  return string.pack("<I4I4I4I4I4I4I4I4I4", entry.volume, entry.indexHigh, entry.indexLow,
+    entry.createdHigh, entry.createdLow, entry.writtenHigh, entry.writtenLow, entry.sizeHigh, entry.sizeLow)
 end
 
 ---Renames / moves a file. Returns true, or nil and a reason.
