@@ -37,6 +37,12 @@ options:
   text: '{{delete_after_days_tooltip}}'
   hasHeader: true
   children:
+  - url: autosave.dialog_controls
+    name: autosave-dialog-controls
+    text: '{{dialog_controls}}'
+    display: Switch
+    contents:
+      value: false
   - url: autosave.delete_after_days
     name: autosave-delete-after-days
     text: '{{delete_after_days}}'

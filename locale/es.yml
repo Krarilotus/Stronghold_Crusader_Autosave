@@ -10,3 +10,4 @@ versions: Autoguardados de partida a conservar
 tags.interface: Interfaz
 tags.tools: Herramientas
 versions_help: En una partida de un jugador, abre Guardar para activar o desactivar el autoguardado y ajustar los minutos entre guardados.
+dialog_controls: Activar los controles de guardar y cargar

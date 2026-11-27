@@ -378,6 +378,13 @@ local function integerOption(value, minimum, maximum, default, name)
   return number
 end
 
+local function booleanOption(value, name)
+  if value == nil then return false end
+  if type(value) == "boolean" then return value end
+  log(ERROR, "Autosave: invalid " .. name .. " type. Using off.")
+  return false
+end
+
 local function isValidSaveName(name)
   return #name >= 1 and #name <= MAX_BASE_NAME_LENGTH
     and name:match("^[%w _%-%(%)]+$") ~= nil
@@ -1448,21 +1455,28 @@ return {
 
   enable = function(self, config)
     config = config or {}
+    if type(config) ~= "table" then
+      log(ERROR, "Autosave: invalid settings type. Using defaults.")
+      return
+    end
     local options = {
       versions = integerOption(config.versions, 1, MAX_VERSIONS, DEFAULT_VERSIONS, "save count"),
       deleteAfterDays = integerOption(config.delete_after_days, 0, MAX_DELETE_AFTER_DAYS,
         DEFAULT_DELETE_AFTER_DAYS, "retention days"),
-      editorMaps = config.editor_maps == true,
+      editorMaps = booleanOption(config.editor_maps, "editor_maps"),
     }
     local settings = {
-      enabled = config.enabled == true,
+      enabled = booleanOption(config.enabled, "enabled"),
       minutes = DEFAULT_MINUTES,
       name = DEFAULT_SAVE_NAME,
     }
+    local dialogs = booleanOption(config.dialog_controls, "dialog_controls")
+    if not settings.enabled and not options.editorMaps and not dialogs and options.deleteAfterDays == 0 then
+      return
+    end
     local ok, message = pcall(enable, settings, options)
     if not ok then
-      log(ERROR, "Autosave is off. The game save and load code could not be installed.")
-      log(WARNING, "autosave: not active: " .. tostring(message))
+      log(ERROR, "Autosave is off. The game save and load code could not be installed: " .. tostring(message))
     end
   end,
 

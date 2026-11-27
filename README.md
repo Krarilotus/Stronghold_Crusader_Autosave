@@ -41,12 +41,14 @@ the version from `definition.yml`), then enable **Autosave** in the UCP3 GUI.
 
 ## Settings
 
-In the UCP3 GUI: whether autosaving starts switched on (default off), how many autosaves to keep
-(1-5) whether named editor maps are autosaved, and how many days deleted files are kept (default 0 = never deleted).
+In the UCP3 GUI, choose whether timed autosaving starts on, how many saves to keep (1–5),
+whether to autosave named editor maps, and how many days to keep deleted files (0 keeps them).
+Enable Save and Load dialog controls to use the in-game controls with timed autosaving, editor
+autosaving, and timed deletion all off.
 
 The interval, the on/off state and the autosave name live in `settings.txt` in the module's UCP
 user data folder (`ucp/userdata/autosave/` in the game's user folder). The Save dialog writes it;
-once it exists, its on/off state overrides the GUI default. An older `ucp/autosave-settings.txt`
+once it exists, its on/off state overrides the GUI default when the module starts. An older `ucp/autosave-settings.txt`
 in the game folder is taken over on first start.
 
 ```

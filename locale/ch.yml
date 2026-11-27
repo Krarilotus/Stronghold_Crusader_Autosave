@@ -10,3 +10,4 @@ versions: 保留的游戏自动存档数
 tags.interface: 界面
 tags.tools: 工具
 versions_help: 在单人游戏中打开“保存”界面，即可开关自动存档并设置存档间隔分钟数。
+dialog_controls: 启用保存和载入窗口控件
