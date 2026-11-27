@@ -1,5 +1,5 @@
 autosave_group: Autoguardados
-editor_maps: Autoguardar mapas en el editor de mapas
+editor_maps: Autoguardar mapas en el editor
 editor_maps_tooltip: Conserva una copia de los mapas con nombre como "<mapa>_autosave.map" hasta que guardes el mapa tú mismo.
 delete_after_days: Días para conservar archivos eliminados
 delete_after_days_tooltip: 0 nunca elimina. Los demás valores permiten restaurarlos antes de que caduquen.

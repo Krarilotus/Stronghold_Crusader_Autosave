@@ -4,7 +4,7 @@ editor_maps_tooltip: Az elnevezett térképekről „<térkép>_autosave.map” 
 delete_after_days: Törölt fájlok megőrzése (nap)
 delete_after_days_tooltip: '0: nincs törlés. Egyébként lejáratig visszaállíthatók a fájlok.'
 delete_group: Törölt mentések és térképek
-enabled: Automatikus mentés alapból be
+enabled: Automatikus mentés alapértelmezés szerint
 qol: Kényelmi funkciók
 versions: Megtartott automatikus mentések
 tags.interface: Kezelőfelület
