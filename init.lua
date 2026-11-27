@@ -942,6 +942,12 @@ local function enable(settings, options)
   local editorCopies = {}
   -- Map paths are in the game's ANSI encoding and file stamps are binary.
   local copyRecord = "<s2s2s1"
+  -- A stored copy counts only as an autosave copy beside its own source map.
+  local function isCopyOf(path, source)
+    local folder = function(p) return (p:match("^(.*)[/\\]") or ""):lower() end
+    return folder(path) == folder(source)
+      and files.nameOf(path):lower():sub(-#AUTOSAVE_MAP_SUFFIX - 4) == AUTOSAVE_MAP_SUFFIX .. ".map"
+  end
   local function readEditorCopies()
     local file = store:open(EDITOR_COPIES_FILE, "rb")
     if not file then return {} end
@@ -952,7 +958,9 @@ local function enable(settings, options)
     while offset <= #data do
       local source, path, stamp
       source, path, stamp, offset = string.unpack(copyRecord, data, offset)
-      copies[source] = { path = path, stamp = stamp }
+      if isCopyOf(path, source) then
+        copies[source] = { path = path, stamp = stamp }
+      end
     end
     return copies
   end
