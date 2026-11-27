@@ -1047,7 +1047,10 @@ local function enable(settings, options)
         "map save dispatch has an unexpected screen field")
       editorWriteDone = scan(WRITE_DONE_AOB, "map save completion")
     end)
-    if not ok then log(WARNING, "map editor autosaves unavailable: " .. tostring(reason)) end
+    if not ok then
+      log(ERROR, "Map editor autosave is off.")
+      log(WARNING, tostring(reason))
+    end
   end
 
   local pending, sequence = nil, 0
@@ -1060,7 +1063,7 @@ local function enable(settings, options)
     if recorder then
       if recorder.inputStateVersion ~= 1 or type(recorder.getInputState) ~= "function" then
         if not recorderWarning then
-          log(WARNING, "autosave: paused because Recorder does not expose its activity state")
+          log(ERROR, "Autosave is off while Recorder cannot report its activity.")
           recorderWarning = true
         end
         return
@@ -1411,6 +1414,7 @@ return {
     }
     local ok, message = pcall(enable, settings, options)
     if not ok then
+      log(ERROR, "Autosave is off. The game save and load code could not be installed.")
       log(WARNING, "autosave: not active: " .. tostring(message))
     end
   end,
