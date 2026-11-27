@@ -1,4 +1,6 @@
 autosave_group: Sauvegardes automatiques
+editor_maps: Sauvegarde auto des cartes dans l'éditeur de cartes
+editor_maps_tooltip: Conserve une copie des cartes nommées sous « <carte>_autosave.map » jusqu'à ce que vous sauvegardiez la carte vous-même.
 delete_after_days: Durée de conservation des fichiers supprimés (jours)
 delete_after_days_tooltip: 0 ne supprime jamais. Sinon, les fichiers restent récupérables jusqu'à
   expiration.

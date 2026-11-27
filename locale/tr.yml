@@ -1,4 +1,6 @@
 autosave_group: Otomatik kayıtlar
+editor_maps: Harita düzenleyicide haritaları otomatik kaydet
+editor_maps_tooltip: Adlandırılmış haritaların "<harita>_autosave.map" adlı bir kopyasını, haritayı kendiniz kaydedene kadar saklar.
 delete_after_days: Silinen dosyaları saklama süresi (gün)
 delete_after_days_tooltip: 0 hiç silmez. Diğer değerlerde süre dolana kadar dosyalar geri alınabilir.
 delete_group: Silinen kayıtlar ve haritalar

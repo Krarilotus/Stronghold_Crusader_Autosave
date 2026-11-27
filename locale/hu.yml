@@ -1,4 +1,6 @@
 autosave_group: Automatikus mentések
+editor_maps: Térképek automatikus mentése a térképszerkesztőben
+editor_maps_tooltip: Az elnevezett térképekről „<térkép>_autosave.map” néven megőriz egy másolatot, amíg magad el nem mented a térképet.
 delete_after_days: Törölt fájlok megőrzése (nap)
 delete_after_days_tooltip: '0: nincs törlés. Egyébként lejáratig visszaállíthatók a fájlok.'
 delete_group: Törölt mentések és térképek

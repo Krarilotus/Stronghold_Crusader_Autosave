@@ -1,4 +1,6 @@
 autosave_group: 自动存档
+editor_maps: 在地图编辑器中自动保存地图
+editor_maps_tooltip: 为已命名的地图保留名为“<地图名>_autosave.map”的副本，直到你手动保存该地图。
 delete_after_days: 已删除文件保留天数
 delete_after_days_tooltip: 0 表示永不删除。否则过期前可以恢复文件。
 delete_group: 删除的存档和地图

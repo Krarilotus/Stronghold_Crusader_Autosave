@@ -1,4 +1,6 @@
 autosave_group: Automatisches Speichern
+editor_maps: Karten im Karteneditor automatisch speichern
+editor_maps_tooltip: Behält von benannten Karten eine Kopie „<Karte>_autosave.map“, bis du die Karte selbst speicherst.
 delete_after_days: Aufbewahrung gelöschter Dateien (Tage)
 delete_after_days_tooltip: 0 löscht nie. Sonst können Dateien bis zum Ablauf wiederhergestellt werden.
 delete_group: Gelöschte Spielstände und Karten
