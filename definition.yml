@@ -1,7 +1,7 @@
 name: autosave
 display-name: Autosave
 type: module
-version: 1.0.2
+version: 1.0.3
 author: Monsterfish
 meta:
   version: 1.0.0

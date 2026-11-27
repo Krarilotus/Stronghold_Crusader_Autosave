@@ -287,7 +287,8 @@ local STATE_DELTA = 0x10
 local STATE_FOCUSED = 0x14
 local STATE_NAME_LENGTH = 0x18
 local STATE_EDITOR_SAVE = 0x1C
-local STATE_SIZE = 0x20
+local STATE_EDITOR_ENABLED = 0x20
+local STATE_SIZE = 0x24
 local MAX_FRAME_MS = 1000
 local MS_PER_MINUTE = 60000
 
@@ -362,16 +363,19 @@ local function clampMinutes(minutes)
   return minutes
 end
 
-local function integerOption(value, minimum, maximum, default)
-  if type(value) == "table" then
-    value = value.sliderValue
-  end
-  local number = tonumber(value)
-  if number == nil then
+local function integerOption(value, minimum, maximum, default, name)
+  if value == nil then return default end
+  if type(value) == "table" then value = value.sliderValue end
+  if type(value) ~= "number" then
+    log(ERROR, "Autosave: invalid " .. name .. " type. Using " .. default .. ".")
     return default
   end
-  number = math.tointeger(math.floor(number)) or default
-  return math.max(minimum, math.min(maximum, number))
+  local number = math.tointeger(value)
+  if number == nil or number < minimum or number > maximum then
+    log(WARNING, "Autosave: invalid " .. name .. ". Using " .. default .. ".")
+    return default
+  end
+  return number
 end
 
 local function isValidSaveName(name)
@@ -648,18 +652,31 @@ local function setItemAction(itemTable, index, action)
   end
 end
 
----Points the dialog's static initializer at `newTable`. Should the menu already have been
----built, it is built again the same way.
-local function installItemTable(dialog, newTable)
-  core.writeCodeInteger(dialog.initSite + 1, newTable)
-  local constructMenu = core.exposeCode(dialog.menuConstructor, 2, 1)
-  local function ensureMenu()
-    if core.readInteger(dialog.menu) == dialog.itemTable then
-      constructMenu(dialog.menu, newTable)
+-- Prepare the live menu update alongside the static table patch.
+local function prepareMenu(dialog, newTable)
+  local construct = core.exposeCode(dialog.menuConstructor, 2, 1)
+  local function update(from, to)
+    if core.readInteger(dialog.menu) == from then construct(dialog.menu, to) end
+  end
+  return function() update(dialog.itemTable, newTable) end,
+    function() update(newTable, dialog.itemTable) end
+end
+
+-- Engine detours and dialog pointers share the same rollback boundary.
+local function installPatches(install)
+  local saved = {}
+  local function patch(address, size, write, ...)
+    saved[#saved + 1] = { address = address, bytes = core.readBytes(address, size) }
+    write(address, ...)
+  end
+  local ok, problem = pcall(install, patch)
+  if not ok then
+    for index = #saved, 1, -1 do
+      local original = saved[index]
+      core.writeCode(original.address, original.bytes)
     end
   end
-  ensureMenu()
-  hooks.registerHookCallback("afterInit", ensureMenu)
+  return ok, problem
 end
 
 -- Enable ------------------------------------------------------------------------------------
@@ -1147,11 +1164,10 @@ local function enable(settings, options)
     if options.deleteAfterDays == 0 then
       return
     end
-    local directories = { saveDirectory() }
-    for _, directory in ipairs(mapDirectories()) do
-      table.insert(directories, directory)
-    end
-    local removed, kept = files.purgeStaged(directories, options.deleteAfterDays, os.time())
+    local now = os.time()
+    local removed, kept = files.purgeStaged({ saveDirectory() }, ".sav", options.deleteAfterDays, now)
+    local mapsRemoved, mapsKept = files.purgeStaged(mapDirectories(), ".map", options.deleteAfterDays, now)
+    removed, kept = removed + mapsRemoved, kept + mapsKept
     if removed > 0 or kept > 0 then
       log(INFO, string.format("autosave: permanently deleted %d staged file(s), %d could not be deleted.",
         removed, kept))
@@ -1251,7 +1267,7 @@ local function enable(settings, options)
     saveModalId = SAVE_MODAL_ID,
     loadModalId = LOAD_MODAL_ID,
     mapEditorMode = MAP_EDITOR_MODE,
-    editorMapsEnabled = editorWriteDone and 1 or 0,
+    stateEditorEnabled = state + STATE_EDITOR_ENABLED,
     stateEditorSave = state + STATE_EDITOR_SAVE,
     scenarioMode = SCENARIO_MODE,
     skirmishMode = SKIRMISH_MODE,
@@ -1275,8 +1291,14 @@ local function enable(settings, options)
   local frameHook = assemble(templates.frameHook, values)
   local editorDispatch
   if editorWriteDone then
-    values.resumeMapSaveDispatch = mapSaveDispatch + SIZE_MAP_SAVE_DISPATCH
-    editorDispatch = assemble(templates.mapSaveDispatch, values)
+    local prepared, problem = pcall(function()
+      values.resumeMapSaveDispatch = mapSaveDispatch + SIZE_MAP_SAVE_DISPATCH
+      editorDispatch = assemble(templates.mapSaveDispatch, values)
+    end)
+    if not prepared then
+      editorWriteDone = nil
+      log(ERROR, "Map editor autosave is off: " .. tostring(problem))
+    end
   end
   local fileButtonRender = assemble(templates.fileButtonRender, values)
 
@@ -1328,8 +1350,24 @@ local function enable(settings, options)
 
   -- Patch -----------------------------------------------------------------------------------
 
-  installItemTable(game.save, saveTable)
-  installItemTable(game.load, loadTable)
+  local updateSave, restoreSave = prepareMenu(game.save, saveTable)
+  local updateLoad, restoreLoad = prepareMenu(game.load, loadTable)
+  local installed, installProblem = installPatches(function(patch)
+    patch(game.frameHook, SIZE_FRAME_HOOK, core.writeCode, {
+      0xE9, core.itob(core.getRelativeAddress(game.frameHook, frameHook, -5)),
+    })
+    patch(game.save.initSite + 1, 4, core.writeCodeInteger, saveTable)
+    patch(game.load.initSite + 1, 4, core.writeCodeInteger, loadTable)
+    updateSave()
+    updateLoad()
+  end)
+  if not installed then
+    restoreLoad()
+    restoreSave()
+    error(installProblem, 0)
+  end
+  hooks.registerHookCallback("afterInit", updateSave)
+  hooks.registerHookCallback("afterInit", updateLoad)
 
   hooks.registerHookCallback("afterInit", function()
     local ok, message = pcall(loadSettings, settings)
@@ -1372,29 +1410,38 @@ local function enable(settings, options)
   end)
 
   if editorWriteDone then
-    core.writeCode(mapSaveDispatch, {
-      0xE9, core.itob(core.getRelativeAddress(mapSaveDispatch, editorDispatch, -SIZE_MAP_SAVE_DISPATCH)),
-    })
-    core.detourCode(function(registers)
-      editorMap = activeMapPath()
-      core.writeInteger(state + STATE_ELAPSED, 0)
-      return registers
-    end, editorReadDone, SIZE_READ_DONE_HOOK)
-    core.detourCode(function(registers)
-      editorMap = nil
-      core.writeInteger(state + STATE_ELAPSED, 0)
-      return registers
-    end, newEditorMap, SIZE_NEW_EDITOR_MAP_HOOK)
-    core.detourCode(function(registers)
-      local ok, message = pcall(onSave)
-      if not ok then log(WARNING, "could not clean up editor autosave: " .. tostring(message)) end
-      return registers
-    end, editorWriteDone, SIZE_WRITE_DONE_HOOK)
+    local active, problem = installPatches(function(patch)
+      patch(mapSaveDispatch, SIZE_MAP_SAVE_DISPATCH, core.writeCode, {
+        0xE9, core.itob(core.getRelativeAddress(mapSaveDispatch, editorDispatch, -SIZE_MAP_SAVE_DISPATCH)),
+      })
+      patch(editorReadDone, SIZE_READ_DONE_HOOK, function(address)
+        core.detourCode(function(registers)
+          editorMap = activeMapPath()
+          core.writeInteger(state + STATE_ELAPSED, 0)
+          return registers
+        end, address, SIZE_READ_DONE_HOOK)
+      end)
+      patch(newEditorMap, SIZE_NEW_EDITOR_MAP_HOOK, function(address)
+        core.detourCode(function(registers)
+          editorMap = nil
+          core.writeInteger(state + STATE_ELAPSED, 0)
+          return registers
+        end, address, SIZE_NEW_EDITOR_MAP_HOOK)
+      end)
+      patch(editorWriteDone, SIZE_WRITE_DONE_HOOK, function(address)
+        core.detourCode(function(registers)
+          local ok, message = pcall(onSave)
+          if not ok then log(WARNING, "could not clean up editor autosave: " .. tostring(message)) end
+          return registers
+        end, address, SIZE_WRITE_DONE_HOOK)
+      end)
+      core.writeInteger(state + STATE_EDITOR_ENABLED, 1)
+    end)
+    if not active then
+      editorWriteDone = nil
+      log(ERROR, "Map editor autosave is off: " .. tostring(problem))
+    end
   end
-
-  core.writeCode(game.frameHook, {
-    0xE9, core.itob(core.getRelativeAddress(game.frameHook, frameHook, -5)),
-  })
 end
 
 return {
@@ -1402,9 +1449,9 @@ return {
   enable = function(self, config)
     config = config or {}
     local options = {
-      versions = integerOption(config.versions, 1, MAX_VERSIONS, DEFAULT_VERSIONS),
+      versions = integerOption(config.versions, 1, MAX_VERSIONS, DEFAULT_VERSIONS, "save count"),
       deleteAfterDays = integerOption(config.delete_after_days, 0, MAX_DELETE_AFTER_DAYS,
-        DEFAULT_DELETE_AFTER_DAYS),
+        DEFAULT_DELETE_AFTER_DAYS, "retention days"),
       editorMaps = config.editor_maps == true,
     }
     local settings = {

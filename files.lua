@@ -276,15 +276,18 @@ function files.stage(path, now, related)
 end
 
 ---The staged files that belong to `directory`, with the time they were deleted.
-function files.stagedFiles(directory)
+local function stagedFiles(directory, extension)
   local staging = files.stagingDirectory(directory)
   local staged = {}
+  extension = extension:lower()
   for _, name in ipairs(files.list(staging)) do
-    local entry = parseStagedName(name)
-    if entry ~= nil then
-      entry.path = staging .. name
-      entry.directory = directory
-      table.insert(staged, entry)
+    if name:lower():sub(-#extension) == extension then
+      local entry = parseStagedName(name)
+      if entry ~= nil then
+        entry.path = staging .. name
+        entry.directory = directory
+        table.insert(staged, entry)
+      end
     end
   end
   return staged
@@ -296,10 +299,9 @@ end
 function files.restoreNewest(directories, extension)
   local newest = nil
   for _, directory in ipairs(directories) do
-    for _, entry in ipairs(files.stagedFiles(directory)) do
-      if entry.original:lower():sub(-#extension) == extension:lower()
-        and (newest == nil or entry.time > newest.time
-          or (entry.time == newest.time and entry.counter > newest.counter)) then
+    for _, entry in ipairs(stagedFiles(directory, extension)) do
+      if newest == nil or entry.time > newest.time
+          or (entry.time == newest.time and entry.counter > newest.counter) then
         newest = entry
       end
     end
@@ -325,10 +327,10 @@ end
 
 ---Deletes the staged files of `directories` that were deleted at least `days` days before
 ---`now`. Files Windows will not delete stay for the player.
-function files.purgeStaged(directories, days, now)
+function files.purgeStaged(directories, extension, days, now)
   local removed, kept = 0, 0
   for _, directory in ipairs(directories) do
-    for _, entry in ipairs(files.stagedFiles(directory)) do
+    for _, entry in ipairs(stagedFiles(directory, extension)) do
       if now - entry.time >= days * SECONDS_PER_DAY then
         local done, message = files.delete(entry.path)
         if done then

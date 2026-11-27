@@ -48,14 +48,12 @@ test eax, eax
 je reset_timer
 jmp on_map
 map_editor:
-if editorMapsEnabled = 0
-jmp reset_timer
-else
+cmp dword [stateEditorEnabled], 0
+je reset_timer
 cmp dword [screenId], mapEditorScreen
 je on_map
 cmp dword [screenId], mapLandscapingScreen
 jne reset_timer
-end if
 on_map:
 cmp dword [gamePaused], 0
 jne frame_done
