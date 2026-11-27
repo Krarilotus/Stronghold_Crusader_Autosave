@@ -294,10 +294,8 @@ local MS_PER_MINUTE = 60000
 -- Helpers -----------------------------------------------------------------------------------
 
 local function scan(pattern, purpose)
-  local found, address = pcall(core.AOBScan, pattern)
-  if not found or address == nil then
-    error("could not find " .. purpose)
-  end
+  local address, reason = core.AOBScanUnique(pattern)
+  assert(address, purpose .. ": " .. tostring(reason))
   return address
 end
 
@@ -985,20 +983,15 @@ local function enable(settings, options)
 
   local editorWriteDone, editorReadDone, newEditorMap, mapSaveDispatch
   if options.editorMaps then
-    local function bind(pattern, purpose)
-      local address, reason = core.AOBScanUnique(pattern)
-      assert(address, purpose .. ": " .. tostring(reason))
-      return address
-    end
     local ok, reason = pcall(function()
       expectBytes(game.setPath + 0x22, { 0x89, 0xB3, 0xC4, 0x0B, 0, 0 },
         "the active resource type")
-      editorReadDone = bind(READ_DONE_AOB, "map load completion")
-      newEditorMap = bind(NEW_EDITOR_MAP_AOB, "new map creation")
-      mapSaveDispatch = bind(MAP_SAVE_DISPATCH_AOB, "map save dispatch")
+      editorReadDone = scan(READ_DONE_AOB, "map load completion")
+      newEditorMap = scan(NEW_EDITOR_MAP_AOB, "new map creation")
+      mapSaveDispatch = scan(MAP_SAVE_DISPATCH_AOB, "map save dispatch")
       assert(core.readInteger(mapSaveDispatch + 1) == game.gameCore + OFFSET_SCREEN_ID,
         "map save dispatch has an unexpected screen field")
-      editorWriteDone = bind(WRITE_DONE_AOB, "map save completion")
+      editorWriteDone = scan(WRITE_DONE_AOB, "map save completion")
     end)
     if not ok then log(WARNING, "map editor autosaves unavailable: " .. tostring(reason)) end
   end
