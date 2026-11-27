@@ -1,12 +1,12 @@
 autosave_group: Autoguardados
-editor_maps: Autoguardar mapas en el editor
-editor_maps_tooltip: Conserva una copia de los mapas con nombre como "<mapa>_autosave.map" hasta que guardes el mapa tú mismo.
-delete_after_days: Días para conservar archivos eliminados
-delete_after_days_tooltip: 0 nunca elimina. Los demás valores permiten restaurarlos antes de que caduquen.
+editor_maps: Autoguardar mapas del editor con nombre
+editor_maps_tooltip: Guarda el mapa una vez para darle nombre. Una copia de recuperación permanece junto a él hasta que vuelvas a guardar el original.
+delete_after_days: Retención de archivos descartados (días)
+delete_after_days_tooltip: Los archivos descartados caducan tras estos días. Elige 0 para conservarlos hasta que los restaures o elimines.
 delete_group: Partidas y mapas eliminados
-enabled: Autoguardado activado por defecto
+enabled: Activar autoguardado al instalar por primera vez
 qol: Comodidad de juego
-versions: Autoguardados a conservar
+versions: Autoguardados de partida a conservar
 tags.interface: Interfaz
 tags.tools: Herramientas
-versions_help: Por defecto se conservan los últimos 5 autoguardados. Los archivos anteriores se mueven cuando termina el nuevo guardado.
+versions_help: En una partida de un jugador, abre Guardar para activar o desactivar el autoguardado y ajustar los minutos entre guardados.

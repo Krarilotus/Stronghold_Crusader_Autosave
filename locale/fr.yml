@@ -1,13 +1,12 @@
 autosave_group: Sauvegardes automatiques
-editor_maps: Sauvegarde auto des cartes dans l'éditeur
-editor_maps_tooltip: Conserve une copie des cartes nommées sous « <carte>_autosave.map » jusqu'à ce que vous sauvegardiez la carte vous-même.
-delete_after_days: Durée de conservation des fichiers supprimés (jours)
-delete_after_days_tooltip: 0 ne supprime jamais. Sinon, les fichiers restent récupérables jusqu'à
-  expiration.
+editor_maps: Sauvegarde auto des cartes nommées de l’éditeur
+editor_maps_tooltip: Enregistrez la carte une fois pour la nommer. Une copie de récupération reste à côté jusqu’à ce que vous réenregistriez l’original.
+delete_after_days: Conservation des fichiers écartés (jours)
+delete_after_days_tooltip: Les fichiers écartés expirent après ce nombre de jours. Choisissez 0 pour les conserver jusqu’à leur restauration ou suppression.
 delete_group: Sauvegardes et cartes supprimées
-enabled: Sauvegarde auto activée par défaut
+enabled: Activer la sauvegarde auto à la première installation
 qol: Qualité de vie
-versions: Sauvegardes automatiques à garder
+versions: Sauvegardes auto de partie à conserver
 tags.interface: Interface
 tags.tools: Outils
-versions_help: Par défaut, les 5 dernières sauvegardes automatiques sont conservées. Les anciennes sont déplacées après l’enregistrement réussi de la nouvelle.
+versions_help: En solo, ouvrez Sauvegarder pour activer ou désactiver la sauvegarde auto et définir l’intervalle en minutes.

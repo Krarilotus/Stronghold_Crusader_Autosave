@@ -1,12 +1,12 @@
 autosave_group: Otomatik kayıtlar
-editor_maps: Harita düzenleyicide haritaları otomatik kaydet
-editor_maps_tooltip: Adlandırılmış haritaların "<harita>_autosave.map" adlı bir kopyasını, haritayı kendiniz kaydedene kadar saklar.
-delete_after_days: Silinen dosyaları saklama süresi (gün)
-delete_after_days_tooltip: 0 hiç silmez. Diğer değerlerde süre dolana kadar dosyalar geri alınabilir.
+editor_maps: Adlandırılmış düzenleyici haritalarını otomatik kaydet
+editor_maps_tooltip: Ad vermek için haritayı bir kez kaydedin. Asıl haritayı tekrar kaydedene kadar yanında bir kurtarma kopyası tutulur.
+delete_after_days: Atılan dosyaları saklama süresi (gün)
+delete_after_days_tooltip: Atılan dosyalar bu gün sayısından sonra silinir. Geri yükleyene veya kaldırana kadar saklamak için 0 seçin.
 delete_group: Silinen kayıtlar ve haritalar
-enabled: Otomatik kayıt varsayılan olarak açık
+enabled: İlk kurulumda otomatik kaydetme açık olsun
 qol: Kullanım kolaylığı
-versions: Saklanacak otomatik kayıt sayısı
+versions: Saklanacak oyun otomatik kayıtları
 tags.interface: Arayüz
 tags.tools: Araçlar
-versions_help: Varsayılan olarak son 5 otomatik kayıt tutulur. Yeni kayıt başarıyla yazıldıktan sonra eski dosyalar taşınır.
+versions_help: Tek oyunculu oyunda Kaydet penceresini açarak otomatik kaydetmeyi açıp kapatabilir ve dakika aralığını ayarlayabilirsiniz.

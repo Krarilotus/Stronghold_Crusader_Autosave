@@ -1,3 +1,3 @@
 # Autosave
 
-Speichert deine Einzelspielerpartie alle paar Minuten automatisch und behält die letzten automatischen Spielstände. Kann benannte Karten beim Bearbeiten auch automatisch als Kopie speichern. In den Dialogen „Laden“ und „Speichern“ gibt es Schaltflächen, mit denen du Spielstände und Karten löschen, wiederherstellen oder im Ordner anzeigen lassen kannst.
+Behält rotierende automatische Spielstände für Einzelspielerpartien und Wiederherstellungskopien benannter Karten. Schalte unter „Speichern“ das automatische Speichern um oder klicke auf das Minutenfeld, gib das Intervall ein und drücke Eingabe. Nutze unter „Laden“ oder „Speichern“ den Papierkorb zum Verwerfen, den gebogenen Pfeil zum Wiederherstellen oder „Ordner öffnen“, um deine Dateien zu finden.

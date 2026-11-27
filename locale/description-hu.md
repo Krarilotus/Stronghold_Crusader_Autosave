@@ -1,3 +1,3 @@
 # Autosave
 
-Néhány percenként automatikusan menti az egyjátékos játékodat, és megőrzi az utolsó néhány automatikus mentést. Az elnevezett térképekről szerkesztés közben is meg tud őrizni egy automatikus mentési másolatot. A Betöltés és a Mentés ablakban új gombokkal törölheted és visszaállíthatod a mentéseket és a térképeket, vagy megjelenítheted a kiválasztott fájlt a mappájában.
+Ciklikus automatikus mentéseket tart meg egyjátékos módhoz, valamint helyreállítási másolatokat az elnevezett térképekhez. A Mentés ablakban kapcsold az automatikus mentést, vagy kattints a perc mezőbe, add meg az időközt és nyomj Entert. A Betöltés vagy Mentés ablakban a kukával vetheted el, az ívelt nyíllal állíthatod vissza, a Mappa megnyitása gombbal pedig elérheted a fájljaidat.

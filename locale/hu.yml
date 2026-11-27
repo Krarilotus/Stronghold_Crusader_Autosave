@@ -1,12 +1,12 @@
 autosave_group: Automatikus mentések
-editor_maps: Térképek automatikus mentése a térképszerkesztőben
-editor_maps_tooltip: Az elnevezett térképekről „<térkép>_autosave.map” néven megőriz egy másolatot, amíg magad el nem mented a térképet.
-delete_after_days: Törölt fájlok megőrzése (nap)
-delete_after_days_tooltip: '0: nincs törlés. Egyébként lejáratig visszaállíthatók a fájlok.'
+editor_maps: Elnevezett szerkesztőtérképek automatikus mentése
+editor_maps_tooltip: Mentsd el egyszer a térképet, hogy nevet kapjon. A helyreállítási másolat mellette marad, amíg újra el nem mented az eredetit.
+delete_after_days: Elvetett fájlok megőrzése (nap)
+delete_after_days_tooltip: Az elvetett fájlok ennyi nap után törlődnek. A 0 érték megőrzi őket, amíg vissza nem állítod vagy el nem távolítod őket.
 delete_group: Törölt mentések és térképek
-enabled: Automatikus mentés alapértelmezés szerint
+enabled: Automatikus mentés bekapcsolva első telepítéskor
 qol: Kényelmi funkciók
-versions: Megtartott automatikus mentések
+versions: Megőrzendő játékbeli automatikus mentések
 tags.interface: Kezelőfelület
 tags.tools: Eszközök
-versions_help: Alapértelmezés szerint az utolsó 5 automatikus mentés marad meg. A régebbi fájlok az új mentés sikeres befejezése után kerülnek a következő helyre.
+versions_help: Egyjátékos módban nyisd meg a Mentés ablakot az automatikus mentés kapcsolásához és a percek beállításához.

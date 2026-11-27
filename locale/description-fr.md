@@ -1,3 +1,3 @@
 # Autosave
 
-Sauvegarde automatiquement votre partie solo toutes les quelques minutes et conserve les dernières sauvegardes automatiques. Peut aussi conserver une copie de sauvegarde automatique des cartes nommées pendant que vous les modifiez. Dans les fenêtres de chargement et de sauvegarde, des boutons permettent de supprimer des sauvegardes et des cartes, de les restaurer ou de les afficher dans leur dossier.
+Conserve des sauvegardes automatiques tournantes en solo et des copies de récupération pour les cartes nommées. Dans Sauvegarder, activez ou désactivez la sauvegarde auto, ou cliquez sur le champ des minutes, saisissez l’intervalle et appuyez sur Entrée. Dans Charger ou Sauvegarder, utilisez la corbeille pour écarter, la flèche courbée pour restaurer ou Ouvrir le dossier pour accéder à vos fichiers.

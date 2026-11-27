@@ -1,12 +1,12 @@
 autosave_group: Automatisches Speichern
-editor_maps: Karten im Karteneditor automatisch speichern
-editor_maps_tooltip: Behält von benannten Karten eine Kopie „<Karte>_autosave.map“, bis du die Karte selbst speicherst.
-delete_after_days: Aufbewahrung gelöschter Dateien (Tage)
-delete_after_days_tooltip: 0 löscht nie. Sonst können Dateien bis zum Ablauf wiederhergestellt werden.
+editor_maps: Benannte Editor-Karten automatisch speichern
+editor_maps_tooltip: Speichere die Karte einmal, um sie zu benennen. Eine Wiederherstellungskopie bleibt daneben erhalten, bis du das Original erneut speicherst.
+delete_after_days: Aufbewahrung verworfener Dateien (Tage)
+delete_after_days_tooltip: Verworfene Dateien verfallen nach dieser Anzahl Tage. Mit 0 bleiben sie erhalten, bis du sie wiederherstellst oder löschst.
 delete_group: Gelöschte Spielstände und Karten
-enabled: Automatisches Speichern standardmäßig an
+enabled: Automatisches Speichern bei Erstinstallation aktiv
 qol: Komfort
-versions: Automatische Spielstände behalten
+versions: Anzahl zu behaltender Spiel-Autosaves
 tags.interface: Oberfläche
 tags.tools: Werkzeuge
-versions_help: Standardmäßig bleiben die letzten 5 automatischen Spielstände erhalten. Ältere Spielstände werden erst nach erfolgreichem Speichern verschoben.
+versions_help: Öffne im Einzelspieler „Speichern“, um das automatische Speichern umzuschalten und das Intervall in Minuten festzulegen.

@@ -1,12 +1,12 @@
 autosave_group: 自动存档
-editor_maps: 在地图编辑器中自动保存地图
-editor_maps_tooltip: 为已命名的地图保留名为“<地图名>_autosave.map”的副本，直到你手动保存该地图。
-delete_after_days: 已删除文件保留天数
-delete_after_days_tooltip: 0 表示永不删除。否则过期前可以恢复文件。
+editor_maps: 自动保存已命名的编辑器地图
+editor_maps_tooltip: 先保存一次地图为其命名。恢复副本会保留在原文件旁，直到你再次保存原地图。
+delete_after_days: 丢弃文件保留天数
+delete_after_days_tooltip: 丢弃的文件在超过该天数后会被清理。设为 0 则一直保留，直到你手动恢复或删除。
 delete_group: 删除的存档和地图
-enabled: 默认开启自动存档
+enabled: 首次安装时默认开启自动存档
 qol: 便利性改进
-versions: 保留的自动存档数
+versions: 保留的游戏自动存档数
 tags.interface: 界面
 tags.tools: 工具
-versions_help: 默认保留最近 5 个自动存档。新存档成功写入后才会轮换旧存档。
+versions_help: 在单人游戏中打开“保存”界面，即可开关自动存档并设置存档间隔分钟数。
