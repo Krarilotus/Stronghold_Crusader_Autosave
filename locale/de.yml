@@ -5,7 +5,7 @@ delete_after_days: Aufbewahrung gelöschter Dateien (Tage)
 delete_after_days_tooltip: 0 löscht nie. Sonst können Dateien bis zum Ablauf wiederhergestellt werden.
 delete_group: Gelöschte Spielstände und Karten
 enabled: Automatisches Speichern standardmäßig an
-qol: Komfortfunktionen
+qol: Komfort
 versions: Automatische Spielstände behalten
 tags.interface: Oberfläche
 tags.tools: Werkzeuge

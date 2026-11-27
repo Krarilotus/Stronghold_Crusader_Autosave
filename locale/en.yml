@@ -1,13 +1,12 @@
 autosave_group: Autosaves
-editor_maps: Autosave maps in the map editor
-editor_maps_tooltip: Keeps a copy of named maps as "<map>_autosave.map" until you save the map yourself.
-delete_after_days: Days to keep discarded files
-delete_after_days_tooltip: 0 never deletes them. Otherwise discarded files can be restored until they
-  expire.
+editor_maps: Autosave named editor maps
+editor_maps_tooltip: Save the map once to name it. A recovery copy stays beside it until you save the original again.
+delete_after_days: Discarded-file retention (days)
+delete_after_days_tooltip: Discarded files expire after this many days. Choose 0 to keep them until you restore or remove them.
 delete_group: Discarded saves and maps
-enabled: Autosave on by default
+enabled: Autosave on when first installed
 qol: Quality of Life
-versions: Autosaves to keep
+versions: Game autosaves to keep
 tags.interface: Interface
 tags.tools: Tools
-versions_help: Keeps the latest 5 autosaves by default. Older files move after the new save succeeds.
+versions_help: In a single-player game, open Save to toggle Autosave and set the minutes between saves.

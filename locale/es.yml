@@ -5,7 +5,7 @@ delete_after_days: Días para conservar archivos eliminados
 delete_after_days_tooltip: 0 nunca elimina. Los demás valores permiten restaurarlos antes de que caduquen.
 delete_group: Partidas y mapas eliminados
 enabled: Autoguardado activado por defecto
-qol: Calidad de vida
+qol: Comodidad de juego
 versions: Autoguardados a conservar
 tags.interface: Interfaz
 tags.tools: Herramientas

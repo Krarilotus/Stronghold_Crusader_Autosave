@@ -5,12 +5,12 @@ options:
   category:
   - '{{qol}}'
   header: '{{autosave_group}}'
-  text: '{{versions_help}}'
   hasHeader: true
   children:
   - url: autosave.enabled
     name: autosave-enabled
     text: '{{enabled}}'
+    tooltip: '{{versions_help}}'
     display: Switch
     contents:
       value: false
