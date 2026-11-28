@@ -295,8 +295,8 @@ local MS_PER_MINUTE = 60000
 -- Helpers -----------------------------------------------------------------------------------
 
 local function scan(pattern, purpose)
-  local address, reason = core.AOBScanUnique(pattern)
-  assert(address, purpose .. ": " .. tostring(reason))
+  local found, address = pcall(core.AOBScan, pattern)
+  assert(found, purpose .. ": not found")
   return address
 end
 
