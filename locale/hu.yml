@@ -11,3 +11,4 @@ tags.interface: Kezelőfelület
 tags.tools: Eszközök
 versions_help: Egyjátékos módban nyisd meg a Mentés ablakot az automatikus mentés kapcsolásához és a percek beállításához.
 dialog_controls: Mentési és betöltési vezérlők engedélyezése
+cat_saves_lobby: Mentések és előtér

@@ -11,3 +11,4 @@ tags.interface: Interface
 tags.tools: Outils
 versions_help: En solo, ouvrez Sauvegarder pour activer ou désactiver la sauvegarde auto et définir l’intervalle en minutes.
 dialog_controls: Activer les commandes des fenêtres de sauvegarde et de chargement
+cat_saves_lobby: Sauvegardes et salon

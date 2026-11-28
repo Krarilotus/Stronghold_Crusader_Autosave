@@ -11,3 +11,4 @@ tags.interface: Oberfläche
 tags.tools: Werkzeuge
 versions_help: Öffne im Einzelspieler „Speichern“, um das automatische Speichern umzuschalten und das Intervall in Minuten festzulegen.
 dialog_controls: Steuerung im Speicher- und Ladedialog aktivieren
+cat_saves_lobby: Spielstände und Lobby

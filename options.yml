@@ -4,6 +4,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{cat_saves_lobby}}'
   header: '{{autosave_group}}'
   hasHeader: true
   children:
@@ -33,6 +34,7 @@ options:
 - display: GroupBox
   category:
   - '{{qol}}'
+  - '{{cat_saves_lobby}}'
   header: '{{delete_group}}'
   text: '{{delete_after_days_tooltip}}'
   hasHeader: true

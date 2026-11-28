@@ -11,3 +11,4 @@ tags.interface: Interface
 tags.tools: Tools
 versions_help: In a single-player game, open Save to toggle Autosave and set the minutes between saves.
 dialog_controls: Enable Save and Load dialog controls
+cat_saves_lobby: Saves and lobby

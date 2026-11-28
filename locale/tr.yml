@@ -11,3 +11,4 @@ tags.interface: Arayüz
 tags.tools: Araçlar
 versions_help: Tek oyunculu oyunda Kaydet penceresini açarak otomatik kaydetmeyi açıp kapatabilir ve dakika aralığını ayarlayabilirsiniz.
 dialog_controls: Kaydetme ve yükleme penceresi denetimlerini etkinleştir
+cat_saves_lobby: Kayıtlar ve lobi
